@@ -29,7 +29,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:text="회원가입"
+            android:text="비밀번호 찾기"
             android:textColor="@android:color/black"
             android:textSize="24sp"
             android:textStyle="bold"
@@ -72,20 +72,6 @@
                 android:paddingStart="16dp"
                 android:paddingEnd="0dp" />
 
-            <Button
-                android:id="@+id/btn_check_duplicate"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_weight="0.05"
-                android:background="@drawable/round_edge"
-                android:text="중복확인"
-                android:textColor="#535353"
-                android:textStyle="bold"
-                android:textSize="18sp"
-                android:paddingLeft="0dp"
-                android:paddingRight="0dp"
-                android:layout_marginLeft="4dp"
-                app:backgroundTint="@null" />
         </LinearLayout>
 
         <!-- 3. 비밀번호 입력 -->
@@ -97,8 +83,8 @@
             android:text="비밀번호 입력"
             android:textColor="@android:color/black"
             android:textSize="16sp"
-            app:layout_constraintStart_toStartOf="@id/pw_input_layout"
-            app:layout_constraintTop_toBottomOf="@id/id_input_layout" />
+            app:layout_constraintStart_toStartOf="@id/email_input_layout"
+            app:layout_constraintTop_toBottomOf="@id/email_input_layout" />
 
         <LinearLayout
             android:id="@+id/pw_input_layout"
@@ -147,7 +133,7 @@
             android:text="비밀번호 확인"
             android:textColor="@android:color/black"
             android:textSize="16sp"
-            app:layout_constraintStart_toStartOf="@id/pw_confirm_layout"
+            app:layout_constraintStart_toStartOf="@+id/pw_input_layout"
             app:layout_constraintTop_toBottomOf="@id/pw_input_layout" />
 
         <LinearLayout
@@ -163,8 +149,8 @@
             <!-- 비밀번호 확인 입력 -->
             <EditText
                 android:id="@+id/et_password_confirm"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_width="322dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@drawable/round_edge"
                 android:hint="비밀번호 확인"
@@ -192,18 +178,18 @@
             android:id="@+id/tv_email_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
             android:text="복구 이메일 입력"
             android:textColor="@android:color/black"
             android:textSize="16sp"
+            android:layout_marginTop="16dp"
             app:layout_constraintStart_toStartOf="@id/email_input_layout"
-            app:layout_constraintTop_toBottomOf="@id/pw_confirm_layout" />
+            app:layout_constraintTop_toBottomOf="@+id/id_input_layout" />
 
         <LinearLayout
             android:id="@+id/email_input_layout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="8dp"
             android:orientation="horizontal"
             app:layout_constraintEnd_toEndOf="@id/id_input_layout"
             app:layout_constraintStart_toStartOf="@id/id_input_layout"
@@ -237,102 +223,23 @@
                 app:backgroundTint="@null" />
         </LinearLayout>
 
-        <!-- 6. 이용약관 동의 -->
-        <CheckBox
-            android:id="@+id/cb_agree_all"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="모두 동의합니다."
-            android:textColor="@android:color/black"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="@id/id_input_layout"
-            app:layout_constraintTop_toBottomOf="@id/email_input_layout"
-            android:minHeight="0dp"
-            android:padding="0dp"
-            />
 
-        <CheckBox
-            android:id="@+id/cb_agree_terms"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="[필수] 이용약관 동의"
-            android:textColor="@android:color/black"
-            app:layout_constraintStart_toStartOf="@id/cb_agree_all"
-            app:layout_constraintTop_toBottomOf="@id/cb_agree_all"
-            android:minHeight="0dp"
-            android:padding="0dp"
-            />
-
-        <TextView
-            android:id="@+id/tv_view_terms"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="[이용약관 보기]"
-            android:textColor="@android:color/darker_gray"
-            android:clickable="true"
-            android:focusable="true"
-            app:layout_constraintEnd_toEndOf="@id/id_input_layout"
-            app:layout_constraintTop_toTopOf="@id/cb_agree_terms"
-            app:layout_constraintBottom_toBottomOf="@id/cb_agree_terms"/>
-
-        <CheckBox
-            android:id="@+id/cb_agree_ads"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="[선택] 광고성 정보 수신 동의"
-            android:textColor="@android:color/black"
-            app:layout_constraintStart_toStartOf="@id/cb_agree_all"
-            app:layout_constraintTop_toBottomOf="@id/cb_agree_terms"
-            android:minHeight="0dp"
-            android:padding="0dp"
-            />
-
-        <CheckBox
-            android:id="@+id/cb_agree_privacy"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="[필수] 개인정보 수집 및 이용 동의"
-            android:textColor="@android:color/black"
-            app:layout_constraintStart_toStartOf="@id/cb_agree_all"
-            app:layout_constraintTop_toBottomOf="@id/cb_agree_ads"
-            android:minHeight="0dp"
-            android:padding="0dp"
-            />
-
-        <TextView
-            android:id="@+id/tv_view_privacy"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="[개인정보처리방침 보기]"
-            android:textColor="@android:color/darker_gray"
-            android:clickable="true"
-            android:focusable="true"
-            app:layout_constraintEnd_toEndOf="@id/id_input_layout"
-            app:layout_constraintTop_toTopOf="@id/cb_agree_privacy"
-            app:layout_constraintBottom_toBottomOf="@id/cb_agree_privacy"/>
-
-        <!-- 7. 가입하기 버튼 -->
         <Button
             android:id="@+id/btn_register"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="48dp"
             android:background="@drawable/round_edge_gray"
+            android:layout_marginTop="32dp"
             android:paddingTop="4dp"
             android:paddingBottom="4dp"
-            android:text="가입하기"
+            android:text="변경하기"
             android:textColor="#979797"
             android:textSize="32sp"
             android:textStyle="bold"
             app:backgroundTint="@null"
             app:layout_constraintEnd_toEndOf="@id/id_input_layout"
             app:layout_constraintStart_toStartOf="@id/id_input_layout"
-            app:layout_constraintTop_toBottomOf="@id/cb_agree_privacy" />
+            app:layout_constraintTop_toBottomOf="@+id/pw_confirm_layout" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

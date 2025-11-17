@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#DBF3C9"
+    android:fillViewport="true">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="48dp">
+
+        <!-- 1. 헤더 (로고 + 타이틀) -->
+        <ImageView
+            android:id="@+id/img_logo"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="24dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/logo_circle"
+            android:contentDescription="앱 로고" />
+
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:text="회원가입"
+            android:textColor="@android:color/black"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@id/img_logo"
+            app:layout_constraintStart_toEndOf="@id/img_logo"
+            app:layout_constraintTop_toTopOf="@id/img_logo" />
+
+        <!-- 2. 아이디 입력 -->
+        <TextView
+            android:id="@+id/tv_id_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="아이디 입력"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            android:baselineAligned="true"
+            app:layout_constraintStart_toStartOf="@id/id_input_layout"
+            app:layout_constraintTop_toBottomOf="@id/img_logo" />
+
+        <LinearLayout
+            android:id="@+id/id_input_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_id_label"
+            app:layout_constraintWidth_percent="0.9">
+
+            <EditText
+                android:id="@+id/et_id"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="0.95"
+                android:background="@drawable/round_edge"
+                android:hint="아이디"
+                android:inputType="text"
+                android:paddingStart="16dp"
+                android:paddingEnd="0dp" />
+
+            <Button
+                android:id="@+id/btn_check_duplicate"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="0.05"
+                android:background="@drawable/round_edge"
+                android:text="중복확인"
+                android:textColor="#535353"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:paddingLeft="0dp"
+                android:paddingRight="0dp"
+                android:layout_marginLeft="4dp"
+                app:backgroundTint="@null" />
+        </LinearLayout>
+
+        <!-- 3. 비밀번호 입력 -->
+        <TextView
+            android:id="@+id/tv_pw_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="비밀번호 입력"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            app:layout_constraintStart_toStartOf="@id/pw_input_layout"
+            app:layout_constraintTop_toBottomOf="@id/id_input_layout" />
+
+        <LinearLayout
+            android:id="@+id/pw_input_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp"
+            app:layout_constraintEnd_toEndOf="@id/id_input_layout"
+            app:layout_constraintStart_toStartOf="@id/id_input_layout"
+            app:layout_constraintTop_toBottomOf="@id/tv_pw_label">
+
+            <!-- EditText -->
+            <EditText
+                android:id="@+id/et_password"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/round_edge"
+                android:hint="비밀번호"
+                android:inputType="textPassword"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:singleLine="true" />
+
+            <!-- ❌ 이모티콘 버튼 형태 -->
+            <TextView
+                android:id="@+id/tv_pw_status"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:gravity="center"
+                android:text="❌"
+                android:textSize="20sp"
+                android:textColor="#FF0000"
+                android:background="@drawable/round_edge"
+                android:layout_marginStart="4dp" />
+        </LinearLayout>
+
+
+
+        <!-- 4. 비밀번호 확인 -->
+        <TextView
+            android:id="@+id/tv_pw_confirm_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="비밀번호 확인"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            app:layout_constraintStart_toStartOf="@id/pw_confirm_layout"
+            app:layout_constraintTop_toBottomOf="@id/pw_input_layout" />
+
+        <LinearLayout
+            android:id="@+id/pw_confirm_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp"
+            app:layout_constraintEnd_toEndOf="@id/id_input_layout"
+            app:layout_constraintStart_toStartOf="@id/id_input_layout"
+            app:layout_constraintTop_toBottomOf="@id/tv_pw_confirm_label">
+
+            <!-- 비밀번호 확인 입력 -->
+            <EditText
+                android:id="@+id/et_password_confirm"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/round_edge"
+                android:hint="비밀번호 확인"
+                android:inputType="textPassword"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:singleLine="true" />
+
+            <!-- ❌ 이모티콘 버튼 -->
+            <TextView
+                android:id="@+id/tv_pw_confirm_status"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:gravity="center"
+                android:text="❌"
+                android:textSize="20sp"
+                android:textColor="#FF0000"
+                android:background="@drawable/round_edge"
+                android:layout_marginStart="8dp" />
+        </LinearLayout>
+
+
+        <!-- 5. 복구 이메일 입력 -->
+        <TextView
+            android:id="@+id/tv_email_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="복구 이메일 입력"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            app:layout_constraintStart_toStartOf="@id/email_input_layout"
+            app:layout_constraintTop_toBottomOf="@id/pw_confirm_layout" />
+
+        <LinearLayout
+            android:id="@+id/email_input_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="@id/id_input_layout"
+            app:layout_constraintStart_toStartOf="@id/id_input_layout"
+            app:layout_constraintTop_toBottomOf="@id/tv_email_label">
+
+            <EditText
+                android:id="@+id/et_email"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/round_edge"
+                android:hint="이메일 주소"
+                android:inputType="textEmailAddress"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:singleLine="true" />
+
+            <Button
+                android:id="@+id/btn_verify_email"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_marginStart="4dp"
+                android:background="@drawable/round_edge"
+                android:text="인증"
+                android:textSize="18sp"
+                android:textColor="#535353"
+                android:textStyle="bold"
+                app:backgroundTint="@null" />
+        </LinearLayout>
+
+        <!-- 6. 이용약관 동의 -->
+        <CheckBox
+            android:id="@+id/cb_agree_all"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="모두 동의합니다."
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="@id/id_input_layout"
+            app:layout_constraintTop_toBottomOf="@id/email_input_layout" />
+
+        <CheckBox
+            android:id="@+id/cb_agree_terms"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="[필수] 이용약관 동의"
+            android:textColor="@android:color/black"
+            app:layout_constraintStart_toStartOf="@id/cb_agree_all"
+            app:layout_constraintTop_toBottomOf="@id/cb_agree_all" />
+
+        <TextView
+            android:id="@+id/tv_view_terms"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="[이용약관 보기]"
+            android:textColor="@android:color/darker_gray"
+            android:clickable="true"
+            android:focusable="true"
+            app:layout_constraintEnd_toEndOf="@id/id_input_layout"
+            app:layout_constraintTop_toTopOf="@id/cb_agree_terms"
+            app:layout_constraintBottom_toBottomOf="@id/cb_agree_terms"/>
+
+        <CheckBox
+            android:id="@+id/cb_agree_ads"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="[선택] 광고성 정보 수신 동의"
+            android:textColor="@android:color/black"
+            app:layout_constraintStart_toStartOf="@id/cb_agree_all"
+            app:layout_constraintTop_toBottomOf="@id/cb_agree_terms" />
+
+        <CheckBox
+            android:id="@+id/cb_agree_privacy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="[필수] 개인정보 수집 및 이용 동의"
+            android:textColor="@android:color/black"
+            app:layout_constraintStart_toStartOf="@id/cb_agree_all"
+            app:layout_constraintTop_toBottomOf="@id/cb_agree_ads" />
+
+        <TextView
+            android:id="@+id/tv_view_privacy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="[개인정보처리방침 보기]"
+            android:textColor="@android:color/darker_gray"
+            android:clickable="true"
+            android:focusable="true"
+            app:layout_constraintEnd_toEndOf="@id/id_input_layout"
+            app:layout_constraintTop_toTopOf="@id/cb_agree_privacy"
+            app:layout_constraintBottom_toBottomOf="@id/cb_agree_privacy"/>
+
+        <!-- 7. 가입하기 버튼 -->
+        <Button
+            android:id="@+id/btn_register"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="48dp"
+            android:background="@drawable/rounded_button_white_border_bg"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:text="가입하기"
+            android:textColor="#555555"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            app:backgroundTint="@null"
+            app:layout_constraintEnd_toEndOf="@id/id_input_layout"
+            app:layout_constraintStart_toStartOf="@id/id_input_layout"
+            app:layout_constraintTop_toBottomOf="@id/cb_agree_privacy" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</ScrollView>

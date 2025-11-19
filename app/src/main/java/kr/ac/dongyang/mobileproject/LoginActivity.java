@@ -75,9 +75,10 @@ public class LoginActivity extends AppCompatActivity {
     protected void chkEmpty(){
         if (this.enterId.getText().toString().isEmpty() || enterPw.getText().toString().isEmpty()) {
             loginBtn.setBackgroundResource(R.drawable.login_n_btn);
+            loginBtn.setTextColor(R.color.gray);
         } else {
             loginBtn.setBackgroundResource(R.drawable.login_y_btn);
-
+            loginBtn.setTextColor(R.color.white);
         }
     }
 }

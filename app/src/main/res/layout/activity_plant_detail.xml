@@ -12,56 +12,38 @@
         android:layout_height="wrap_content"
         android:padding="20dp">
 
-        <ImageView
-            android:id="@+id/iv_back"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_arrow_back"
-            app:tint="#333333"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:src="@android:drawable/ic_menu_revert" />
-
         <TextView
-            android:id="@+id/tv_header_title"
-            android:layout_width="wrap_content"
+            android:id="@+id/tv_greeting"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
             android:text="동그래님 안녕하세요!"
             android:textColor="#333333"
-            android:textSize="18sp"
+            android:textSize="22sp"
             android:textStyle="bold"
-            app:layout_centerY_toValueOf="@+id/iv_back"
-            app:layout_constraintStart_toEndOf="@+id/iv_back" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/iv_menu"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
             android:id="@+id/iv_menu"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_menu"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/menubtn"
             app:tint="#333333"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_centerY_toValueOf="@+id/iv_back"
-            tools:src="@android:drawable/ic_menu_sort_by_size" />
-
-        <ImageView
-            android:id="@+id/iv_notification"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_marginEnd="16dp"
-            android:src="@drawable/ic_notification"
-            app:tint="#333333"
-            app:layout_constraintEnd_toStartOf="@+id/iv_menu"
-            app:layout_centerY_toValueOf="@+id/iv_back"
-            tools:src="@android:drawable/ic_popup_reminder" />
+            app:layout_constraintTop_toTopOf="@+id/tv_greeting"
+            app:layout_constraintBottom_toBottomOf="@+id/tv_greeting"
+            tools:src="@drawable/menubtn" />
 
         <LinearLayout
             android:id="@+id/layout_plant_info"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:orientation="vertical"
-            app:layout_constraintTop_toBottomOf="@+id/iv_back">
+            app:layout_constraintTop_toBottomOf="@+id/tv_greeting"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -81,7 +63,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_marginStart="8dp"
-                    android:src="@drawable/ic_search"
+                    android:src="@drawable/search"
                     app:tint="#555555"
                     tools:src="@android:drawable/ic_menu_search" />
             </LinearLayout>
@@ -104,7 +86,7 @@
                 <ImageView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
-                    android:src="@drawable/ic_edit"
+                    android:src="@drawable/edit"
                     app:tint="#757575"
                     tools:src="@android:drawable/ic_menu_edit" />
             </LinearLayout>
@@ -113,12 +95,14 @@
 
         <androidx.cardview.widget.CardView
             android:id="@+id/card_water_manage"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             app:cardBackgroundColor="#FFFBE6"
             app:cardCornerRadius="16dp"
             app:cardElevation="2dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/layout_plant_info">
 
             <androidx.constraintlayout.widget.ConstraintLayout
@@ -141,7 +125,7 @@
                     android:id="@+id/iv_water_edit"
                     android:layout_width="20dp"
                     android:layout_height="20dp"
-                    android:src="@drawable/ic_edit"
+                    android:src="@drawable/edit"
                     app:tint="#9E9E9E"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_centerY_toValueOf="@+id/tv_water_title"
@@ -151,7 +135,7 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:layout_marginEnd="12dp"
-                    android:src="@drawable/ic_notification"
+                    android:src="@drawable/bell"
                     app:tint="#9E9E9E"
                     app:layout_constraintEnd_toStartOf="@+id/iv_water_edit"
                     app:layout_centerY_toValueOf="@+id/tv_water_title"
@@ -174,6 +158,7 @@
                     android:layout_marginTop="20dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
+                    app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/tv_water_cycle">
 
                     <TextView
@@ -199,7 +184,7 @@
                             android:layout_height="6dp"
                             android:layout_gravity="top|center_horizontal"
                             android:layout_marginTop="4dp"
-                            android:background="@drawable/shape_red_dot" />
+                            android:background="@drawable/red_dot" />
                     </FrameLayout>
 
                     <TextView style="@style/WaterDateTextStyle" android:text="4" />
@@ -212,7 +197,7 @@
                         <ImageView
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:src="@drawable/ic_water_drop_shape"
+                            android:src="@drawable/water_img"
                             app:tint="#B3E5FC" />
                         <TextView
                             android:layout_width="wrap_content"
@@ -233,12 +218,14 @@
 
         <androidx.cardview.widget.CardView
             android:id="@+id/card_photo"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             app:cardBackgroundColor="#FFFBE6"
             app:cardCornerRadius="16dp"
             app:cardElevation="2dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/card_water_manage">
 
             <LinearLayout
@@ -265,7 +252,7 @@
                     <ImageView
                         android:layout_width="20dp"
                         android:layout_height="20dp"
-                        android:src="@drawable/ic_edit"
+                        android:src="@drawable/edit"
                         app:tint="#9E9E9E"
                         tools:src="@android:drawable/ic_menu_edit" />
 
@@ -273,7 +260,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_marginStart="16dp"
-                        android:src="@drawable/ic_add"
+                        android:src="@drawable/add"
                         app:tint="#757575"
                         tools:src="@android:drawable/ic_input_add" />
                 </LinearLayout>
@@ -299,7 +286,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
                                 android:scaleType="centerCrop"
-                                android:src="@drawable/sample_plant_image"
+                                android:src="@drawable/plant_sample"
                                 tools:src="@android:drawable/ic_menu_gallery" />
                         </androidx.cardview.widget.CardView>
 
@@ -312,7 +299,7 @@
                                 android:layout_width="32dp"
                                 android:layout_height="32dp"
                                 android:layout_gravity="center"
-                                android:src="@drawable/ic_add"
+                                android:src="@drawable/add"
                                 app:tint="#9E9E9E"
                                 tools:src="@android:drawable/ic_input_add" />
                         </FrameLayout>
@@ -324,13 +311,15 @@
 
         <androidx.cardview.widget.CardView
             android:id="@+id/card_memo"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:layout_marginBottom="20dp"
             app:cardBackgroundColor="#FFFBE6"
             app:cardCornerRadius="16dp"
             app:cardElevation="2dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/card_photo">
 
@@ -356,14 +345,14 @@
                     <ImageView
                         android:layout_width="20dp"
                         android:layout_height="20dp"
-                        android:src="@drawable/ic_edit"
+                        android:src="@drawable/edit"
                         app:tint="#9E9E9E"
                         tools:src="@android:drawable/ic_menu_edit" />
                     <ImageView
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_marginStart="16dp"
-                        android:src="@drawable/ic_add"
+                        android:src="@drawable/add"
                         app:tint="#757575"
                         tools:src="@android:drawable/ic_input_add" />
                 </LinearLayout>
@@ -412,7 +401,7 @@
                                 android:layout_width="32dp"
                                 android:layout_height="32dp"
                                 android:layout_gravity="center"
-                                android:src="@drawable/ic_add"
+                                android:src="@drawable/add"
                                 app:tint="#9E9E9E"
                                 tools:src="@android:drawable/ic_input_add" />
                         </FrameLayout>

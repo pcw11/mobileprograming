@@ -16,7 +16,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintWidth_percent="0.25"
-        app:srcCompat="@drawable/logo_circle" />
+        app:srcCompat="@drawable/logo_circle"
+        android:contentDescription="@string/login_logo_description" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/id_input_group"
@@ -34,7 +35,7 @@
             android:layout_height="wrap_content"
             android:background="@drawable/loginbg"
             android:fontFamily="@font/pretendard_n"
-            android:hint="아이디를 입력하세요"
+            android:hint="@string/login_hint_id"
             android:inputType="textEmailAddress"
             android:minHeight="48dp"
             android:paddingStart="56dp"
@@ -55,7 +56,7 @@
             android:layout_height="wrap_content"
             android:fontFamily="@font/pretendard_n"
             android:paddingLeft="16dp"
-            android:text="ID :"
+            android:text="@string/login_id_label"
             android:layout_marginBottom="6dp"
             android:textColor="@color/l_gray"
             android:textSize="18sp"
@@ -80,7 +81,7 @@
             android:layout_height="wrap_content"
             android:background="@drawable/loginbg"
             android:fontFamily="@font/pretendard_n"
-            android:hint="비밀번호를 입력하세요"
+            android:hint="@string/login_hint_password"
             android:inputType="textPassword"
             android:minHeight="48dp"
             android:paddingStart="56dp"
@@ -102,7 +103,7 @@
             android:fontFamily="@font/pretendard_n"
             android:paddingLeft="16dp"
             android:layout_marginBottom="6dp"
-            android:text="PW :"
+            android:text="@string/login_pw_label"
             android:textColor="@color/l_gray"
             android:textSize="18sp"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -120,8 +121,8 @@
         android:focusable="true"
         android:fontFamily="@font/pretendard_n"
         android:minHeight="24dp"
-        android:text="회원이 아니신가요? 신규 가입"
-        android:textColor="@android:color/black"
+        android:text="@string/login_register_prompt"
+        android:textColor="@color/black"
         app:layout_constraintStart_toStartOf="@id/pw_input_group"
         app:layout_constraintTop_toBottomOf="@id/pw_input_group" />
 
@@ -135,8 +136,8 @@
         android:focusable="true"
         android:fontFamily="@font/pretendard_n"
         android:minHeight="24dp"
-        android:text="비밀번호 찾기"
-        android:textColor="@android:color/black"
+        android:text="@string/login_find_password"
+        android:textColor="@color/black"
         app:layout_constraintEnd_toEndOf="@id/pw_input_group"
         app:layout_constraintTop_toBottomOf="@id/pw_input_group" />
 
@@ -149,7 +150,7 @@
         android:fontFamily="@font/pretendard_b"
         android:paddingTop="12dp"
         android:paddingBottom="16dp"
-        android:text="LOGIN"
+        android:text="@string/login_button_text"
         android:textColor="@color/gray"
         android:textSize="22sp"
         app:backgroundTint="@null"
@@ -164,8 +165,8 @@
         android:layout_height="32dp"
         android:layout_marginTop="2dp"
         android:fontFamily="@font/pretendard_n"
-        android:text="자동 로그인"
-        android:textColor="@android:color/black"
+        android:text="@string/login_auto_login"
+        android:textColor="@color/black"
         app:layout_constraintStart_toStartOf="@id/btn_login"
         app:layout_constraintTop_toBottomOf="@id/btn_login" />
 

@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#DBF3C9"
+    android:background="@color/register_bg"
     android:fillViewport="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -18,7 +18,7 @@
             android:layout_height="48dp"
             android:layout_marginStart="24dp"
             android:layout_marginTop="24dp"
-            android:contentDescription="앱 로고"
+            android:contentDescription="@string/login_logo_description"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/logo_circle" />
@@ -28,11 +28,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:fontFamily="@font/pretendard_n"
-            android:text="회원가입"
-            android:textColor="@android:color/black"
+            android:fontFamily="@font/pretendard_b"
+            android:text="@string/register_title"
+            android:textColor="@color/black"
             android:textSize="24sp"
-            android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="@id/img_logo"
             app:layout_constraintStart_toEndOf="@id/img_logo"
             app:layout_constraintTop_toTopOf="@id/img_logo" />
@@ -44,8 +43,8 @@
             android:layout_marginTop="32dp"
             android:baselineAligned="true"
             android:fontFamily="@font/pretendard_n"
-            android:text="아이디 입력"
-            android:textColor="@android:color/black"
+            android:text="@string/register_id_label"
+            android:textColor="@color/black"
             android:textSize="16sp"
             app:layout_constraintStart_toStartOf="@id/id_input_layout"
             app:layout_constraintTop_toBottomOf="@id/img_logo" />
@@ -68,7 +67,7 @@
                 android:layout_weight="0.95"
                 android:background="@drawable/round_edge"
                 android:fontFamily="@font/pretendard_n"
-                android:hint="아이디"
+                android:hint="@string/register_id_hint"
                 android:inputType="text"
                 android:paddingStart="16dp"
                 android:paddingEnd="0dp" />
@@ -80,13 +79,12 @@
                 android:layout_marginLeft="4dp"
                 android:layout_weight="0.05"
                 android:background="@drawable/round_edge"
-                android:fontFamily="@font/pretendard_n"
+                android:fontFamily="@font/pretendard_b"
                 android:paddingLeft="0dp"
                 android:paddingRight="0dp"
-                android:text="중복확인"
-                android:textColor="#535353"
+                android:text="@string/register_check_duplicate"
+                android:textColor="@color/register_text"
                 android:textSize="18sp"
-                android:textStyle="bold"
                 app:backgroundTint="@null" />
         </LinearLayout>
 
@@ -96,8 +94,8 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:fontFamily="@font/pretendard_n"
-            android:text="비밀번호 입력"
-            android:textColor="@android:color/black"
+            android:text="@string/register_password_label"
+            android:textColor="@color/black"
             android:textSize="16sp"
             app:layout_constraintStart_toStartOf="@id/pw_input_layout"
             app:layout_constraintTop_toBottomOf="@id/id_input_layout" />
@@ -119,7 +117,7 @@
                 android:layout_weight="1"
                 android:background="@drawable/round_edge"
                 android:fontFamily="@font/pretendard_n"
-                android:hint="비밀번호"
+                android:hint="@string/register_password_hint"
                 android:inputType="textPassword"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
@@ -133,8 +131,8 @@
                 android:background="@drawable/round_edge"
                 android:fontFamily="@font/pretendard_n"
                 android:gravity="center"
-                android:text="❌"
-                android:textColor="#FF0000"
+                android:text="@string/register_status_error"
+                android:textColor="@color/register_error"
                 android:textSize="20sp" />
         </LinearLayout>
 
@@ -145,8 +143,8 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:fontFamily="@font/pretendard_n"
-            android:text="비밀번호 확인"
-            android:textColor="@android:color/black"
+            android:text="@string/register_password_confirm_label"
+            android:textColor="@color/black"
             android:textSize="16sp"
             app:layout_constraintStart_toStartOf="@id/pw_confirm_layout"
             app:layout_constraintTop_toBottomOf="@id/pw_input_layout" />
@@ -168,7 +166,7 @@
                 android:layout_weight="1"
                 android:background="@drawable/round_edge"
                 android:fontFamily="@font/pretendard_n"
-                android:hint="비밀번호 확인"
+                android:hint="@string/register_password_confirm_hint"
                 android:inputType="textPassword"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
@@ -182,8 +180,8 @@
                 android:background="@drawable/round_edge"
                 android:fontFamily="@font/pretendard_n"
                 android:gravity="center"
-                android:text="❌"
-                android:textColor="#FF0000"
+                android:text="@string/register_status_error"
+                android:textColor="@color/register_error"
                 android:textSize="20sp" />
         </LinearLayout>
 
@@ -194,8 +192,8 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:fontFamily="@font/pretendard_n"
-            android:text="복구 이메일 입력"
-            android:textColor="@android:color/black"
+            android:text="@string/register_email_label"
+            android:textColor="@color/black"
             android:textSize="16sp"
             app:layout_constraintStart_toStartOf="@id/email_input_layout"
             app:layout_constraintTop_toBottomOf="@id/pw_confirm_layout" />
@@ -217,7 +215,7 @@
                 android:layout_weight="1"
                 android:background="@drawable/round_edge"
                 android:fontFamily="@font/pretendard_n"
-                android:hint="이메일 주소"
+                android:hint="@string/register_email_hint"
                 android:inputType="textEmailAddress"
                 android:minHeight="0dp"
                 android:padding="0dp"
@@ -231,11 +229,10 @@
                 android:layout_height="48dp"
                 android:layout_marginStart="4dp"
                 android:background="@drawable/round_edge"
-                android:fontFamily="@font/pretendard_n"
-                android:text="인증"
-                android:textColor="#535353"
+                android:fontFamily="@font/pretendard_b"
+                android:text="@string/register_verify_email"
+                android:textColor="@color/register_text"
                 android:textSize="18sp"
-                android:textStyle="bold"
                 app:backgroundTint="@null" />
         </LinearLayout>
 
@@ -244,13 +241,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:fontFamily="@font/pretendard_n"
+            android:fontFamily="@font/pretendard_b"
             android:minHeight="0dp"
             android:padding="0dp"
-            android:text="모두 동의합니다."
-            android:textColor="@android:color/black"
+            android:text="@string/register_agree_all"
+            android:textColor="@color/black"
             android:textSize="16sp"
-            android:textStyle="bold"
             app:layout_constraintStart_toStartOf="@id/id_input_layout"
             app:layout_constraintTop_toBottomOf="@id/email_input_layout" />
 
@@ -262,8 +258,8 @@
             android:fontFamily="@font/pretendard_n"
             android:minHeight="0dp"
             android:padding="0dp"
-            android:text="[필수] 이용약관 동의"
-            android:textColor="@android:color/black"
+            android:text="@string/register_agree_terms"
+            android:textColor="@color/black"
             app:layout_constraintStart_toStartOf="@id/cb_agree_all"
             app:layout_constraintTop_toBottomOf="@id/cb_agree_all" />
 
@@ -274,8 +270,8 @@
             android:clickable="true"
             android:focusable="true"
             android:fontFamily="@font/pretendard_n"
-            android:text="[이용약관 보기]"
-            android:textColor="@android:color/darker_gray"
+            android:text="@string/register_view_terms"
+            android:textColor="@color/darker_gray"
             app:layout_constraintBottom_toBottomOf="@id/cb_agree_terms"
             app:layout_constraintEnd_toEndOf="@id/id_input_layout"
             app:layout_constraintTop_toTopOf="@id/cb_agree_terms" />
@@ -288,8 +284,8 @@
             android:fontFamily="@font/pretendard_n"
             android:minHeight="0dp"
             android:padding="0dp"
-            android:text="[선택] 광고성 정보 수신 동의"
-            android:textColor="@android:color/black"
+            android:text="@string/register_agree_ads"
+            android:textColor="@color/black"
             app:layout_constraintStart_toStartOf="@id/cb_agree_all"
             app:layout_constraintTop_toBottomOf="@id/cb_agree_terms" />
 
@@ -301,8 +297,8 @@
             android:fontFamily="@font/pretendard_n"
             android:minHeight="0dp"
             android:padding="0dp"
-            android:text="[필수] 개인정보 수집 및 이용 동의"
-            android:textColor="@android:color/black"
+            android:text="@string/register_agree_privacy"
+            android:textColor="@color/black"
             app:layout_constraintStart_toStartOf="@id/cb_agree_all"
             app:layout_constraintTop_toBottomOf="@id/cb_agree_ads" />
 
@@ -313,8 +309,8 @@
             android:clickable="true"
             android:focusable="true"
             android:fontFamily="@font/pretendard_n"
-            android:text="[개인정보처리방침 보기]"
-            android:textColor="@android:color/darker_gray"
+            android:text="@string/register_view_privacy"
+            android:textColor="@color/darker_gray"
             app:layout_constraintBottom_toBottomOf="@id/cb_agree_privacy"
             app:layout_constraintEnd_toEndOf="@id/id_input_layout"
             app:layout_constraintTop_toTopOf="@id/cb_agree_privacy" />
@@ -325,13 +321,12 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="48dp"
             android:background="@drawable/round_edge_gray"
-            android:fontFamily="@font/pretendard_n"
+            android:fontFamily="@font/pretendard_b"
             android:paddingTop="4dp"
             android:paddingBottom="4dp"
-            android:text="가입하기"
-            android:textColor="#979797"
+            android:text="@string/register_button_text"
+            android:textColor="@color/register_button_text_disabled"
             android:textSize="32sp"
-            android:textStyle="bold"
             app:backgroundTint="@null"
             app:layout_constraintEnd_toEndOf="@id/id_input_layout"
             app:layout_constraintStart_toStartOf="@id/id_input_layout"

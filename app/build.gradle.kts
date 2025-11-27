@@ -1,5 +1,14 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
+}
+
+// Load local.properties file
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
 }
 
 android {
@@ -14,6 +23,12 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Expose properties to BuildConfig
+        buildConfigField("String", "DB_HOST", "\"${localProperties.getProperty("db.host")}\"")
+        buildConfigField("String", "DB_NAME", "\"${localProperties.getProperty("db.name")}\"")
+        buildConfigField("String", "DB_USER", "\"${localProperties.getProperty("db.user")}\"")
+        buildConfigField("String", "DB_PASSWORD", "\"${localProperties.getProperty("db.password")}\"")
     }
 
     buildTypes {
@@ -28,6 +43,10 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+    buildFeatures {
+        viewBinding = true
+        buildConfig = true
     }
 }
 

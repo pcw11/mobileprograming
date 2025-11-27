@@ -1,110 +1,137 @@
 package kr.ac.dongyang.mobileproject;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
-import kr.ac.dongyang.mobileproject.database.DBHelper;
-import kr.ac.dongyang.mobileproject.database.DBLogin;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import kr.ac.dongyang.mobileproject.databinding.LoginBinding;
 
 public class LoginActivity extends AppCompatActivity {
-    TextView enterId, enterPw;
-    Button loginBtn;
 
-    boolean loginTF = false;
+    private LoginBinding binding;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // 1. login.xml을 화면에 표시
-        setContentView(R.layout.login); // R.layout.login.xml
+        binding = LoginBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
 
-        // 2. XML의 View들을 ID로 찾아 연결
-        // '비밀번호 찾기' 텍스트뷰
-        TextView findPasswordText = findViewById(R.id.tv_find_password);
-        this.enterId = findViewById(R.id.et_id);
-        this.enterPw = findViewById(R.id.et_password);
-        // '회원가입' 텍스트뷰
-        TextView registerText = findViewById(R.id.tv_register);
-        this.loginBtn = findViewById(R.id.btn_login);
+        binding.tvFindPassword.setOnClickListener(v -> {
+            Intent intent = new Intent(LoginActivity.this, FindPasswordActivity.class);
+            startActivity(intent);
+        });
+
+        binding.tvRegister.setOnClickListener(v -> {
+            Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
+            startActivity(intent);
+        });
+
         TextWatcher loginTextWatcher = new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                // (사용 안 함)
-            }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                // (사용 안 함)
-            }
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
 
             @Override
             public void afterTextChanged(Editable s) {
-                // 텍스트가 변경될 때마다 checkLoginFields() 메소드 호출
                 chkEmpty();
             }
         };
 
+        binding.etId.addTextChangedListener(loginTextWatcher);
+        binding.etPassword.addTextChangedListener(loginTextWatcher);
 
+        binding.btnLogin.setOnClickListener(v -> {
+            String userId = binding.etId.getText().toString();
+            String password  = binding.etPassword.getText().toString();
 
-        // 3. '비밀번호 찾기' 클릭 리스너 설정
-        findPasswordText.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // FindPasswordActivity로 이동하는 Intent
-                Intent intent = new Intent(LoginActivity.this, FindPasswordActivity.class);
-                startActivity(intent);
-            }
+            login(userId, password);
         });
 
-        // 4. '회원가입' 클릭 리스너 설정
-        registerText.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // RegisterActivity로 이동하는 Intent
-                Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
-                startActivity(intent);
-            }
-        });
-        enterId.addTextChangedListener(loginTextWatcher);
-        enterPw.addTextChangedListener(loginTextWatcher);
-        // (추가) 실제 로그인 버튼(btn_login) 등에도 리스너를 설정할 수 있습니다.
+        chkEmpty(); // 초기 버튼 상태 설정
+    }
 
-        loginBtn.setOnClickListener(v -> { //로그인 버튼 눌렀을때 동작
-            String id = enterId.getText().toString();
-            String pw = enterPw.getText().toString();
-//            DBLogin dbLogin = new DBLogin();
-//            loginTF = dbLogin.login(id, pw);
-            loginTF = true; // 코드 작성 중 임시
-            if (loginTF) {
-                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                startActivity(intent);
-            } else {
-                Toast.makeText(LoginActivity.this, "아이디와 비밀번호를 확인해주세요.", Toast.LENGTH_SHORT).show();
+    private void login(final String userId, final String password) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Handler handler = new Handler(Looper.getMainLooper());
 
+        executor.execute(() -> {
+            String resultMessage = null;
+            Connection conn = null;
+            PreparedStatement pstmt = null;
+            ResultSet rs = null;
+
+            try {
+                conn = DatabaseConnector.getConnection();
+                String sql = "SELECT * FROM users WHERE user_id = ? AND password = ?";
+                pstmt = conn.prepareStatement(sql);
+                pstmt.setString(1, userId);
+                pstmt.setString(2, password);
+                rs = pstmt.executeQuery();
+
+                if (rs.next()) {
+                    resultMessage = "SUCCESS";
+                } else {
+                    resultMessage = "아이디 또는 비밀번호가 일치하지 않습니다.";
+                }
+            } catch (ClassNotFoundException e) {
+                resultMessage = "데이터베이스 드라이버를 찾을 수 없습니다.";
+                Log.e("LoginActivity", "JDBC Driver not found", e);
+            } catch (SQLException e) {
+                resultMessage = "데이터베이스 연결에 실패했습니다. 네트워크 상태를 확인해주세요.";
+                Log.e("LoginActivity", "SQL Exception", e);
+            } finally {
+                try {
+                    if (rs != null) rs.close();
+                    if (pstmt != null) pstmt.close();
+                    if (conn != null) conn.close();
+                } catch (SQLException e) {
+                    Log.e("LoginActivity", "Error closing resources", e);
+                }
             }
+
+            String finalResultMessage = resultMessage;
+            handler.post(() -> {
+                if ("SUCCESS".equals(finalResultMessage)) {
+                    Toast.makeText(LoginActivity.this, "로그인 성공!", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                    startActivity(intent);
+                    finish(); // 로그인 성공 시 현재 액티비티 종료
+                } else {
+                    Toast.makeText(LoginActivity.this, finalResultMessage, Toast.LENGTH_LONG).show();
+                }
+            });
         });
     }
 
+    private void chkEmpty(){
+        boolean isIdEmpty = binding.etId.getText().toString().isEmpty();
+        boolean isPwEmpty = binding.etPassword.getText().toString().isEmpty();
 
-    @SuppressLint("ResourceAsColor")
-    protected void chkEmpty(){
-        if (this.enterId.getText().toString().isEmpty() || enterPw.getText().toString().isEmpty()) {
-            loginBtn.setBackgroundResource(R.drawable.login_n_btn);
-            loginBtn.setTextColor(R.color.gray);
-            loginBtn.setEnabled(false);
+        if (isIdEmpty || isPwEmpty) {
+            binding.btnLogin.setBackgroundResource(R.drawable.login_n_btn);
+            binding.btnLogin.setTextColor(ContextCompat.getColor(this, R.color.gray));
+            binding.btnLogin.setEnabled(false);
         } else {
-            loginBtn.setBackgroundResource(R.drawable.login_y_btn);
-            loginBtn.setTextColor(R.color.white);
-            loginBtn.setEnabled(true);
+            binding.btnLogin.setBackgroundResource(R.drawable.login_y_btn);
+            binding.btnLogin.setTextColor(ContextCompat.getColor(this, R.color.white));
+            binding.btnLogin.setEnabled(true);
         }
     }
 }

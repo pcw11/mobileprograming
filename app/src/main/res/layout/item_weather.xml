@@ -26,6 +26,16 @@
         android:textSize="16sp"
         app:layout_constraintStart_toEndOf="@+id/iv_weather_icon"
         app:layout_constraintTop_toTopOf="@+id/iv_weather_icon" />
+    <ImageView
+
+        android:layout_height="24dp"
+        android:layout_width="24dp"
+        android:src="@drawable/edit"
+        app:layout_constraintStart_toEndOf="@+id/tv_location"
+        app:layout_constraintBottom_toBottomOf="@+id/tv_location"
+        android:layout_marginStart="8dp"
+        id="@+id/iv_edit_location"
+        />
 
     <TextView
         android:id="@+id/tv_weather_temp"

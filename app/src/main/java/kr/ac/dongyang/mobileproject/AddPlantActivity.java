@@ -20,11 +20,6 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.view.GravityCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
-
-import com.google.android.material.card.MaterialCardView;
-import com.google.android.material.navigation.NavigationView;
 
 import java.sql.Connection;
 import java.sql.Date;
@@ -37,67 +32,46 @@ import java.util.List;
 
 public class AddPlantActivity extends AppCompatActivity {
 
-    private DrawerLayout drawerLayout;
-    private NavigationView navigationView;
-    private ImageView ivMenu;
     private TextView tvGreeting;
 
     private EditText etPlantSpecies, etPlantNickname;
-    private ImageView ivWaterEdit, ivMemoAdd;
+    private ImageView ivWaterEdit, ivMemoAdd, ivMemoEdit;
     private TextView tvWaterSubtitle;
     private Button btnSave;
     private LinearLayout llMemoContainer;
 
     private int wateringCycle = 7; // 기본 물 주기 7일
     private String userId;
+    private boolean isEditMode = false;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_plant);
 
-        // 기존 뷰 초기화
-        drawerLayout = findViewById(R.id.drawer_layout_add);
-        navigationView = findViewById(R.id.nav_view_add);
-        ivMenu = findViewById(R.id.iv_menu_add);
+        // 뷰 초기화
         tvGreeting = findViewById(R.id.tv_greeting_add);
-
-        // 새로 추가된 뷰 초기화
         etPlantSpecies = findViewById(R.id.et_plant_species);
         etPlantNickname = findViewById(R.id.et_plant_nickname);
         ivWaterEdit = findViewById(R.id.iv_water_edit);
         tvWaterSubtitle = findViewById(R.id.tv_water_subtitle);
         ivMemoAdd = findViewById(R.id.iv_memo_add);
+        ivMemoEdit = findViewById(R.id.iv_memo_edit);
         llMemoContainer = findViewById(R.id.ll_memo_container);
         btnSave = findViewById(R.id.btn_save);
 
         // MainActivity로부터 사용자 ID를 받아 환영 메시지 설정
         Intent intent = getIntent();
         userId = intent.getStringExtra("USER_ID");
-        if (userId != null && !userId.isEmpty()) {
-            tvGreeting.setText(userId + "님 안녕하세요!");
-        }
-
-        // 메뉴 버튼 클릭 리스너
-        ivMenu.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.END));
-
-        // 네비게이션 메뉴 아이템 클릭 리스너
-        navigationView.setNavigationItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_logout) {
-                logout();
-            } else {
-                Toast.makeText(AddPlantActivity.this, "준비 중인 기능입니다.", Toast.LENGTH_SHORT).show();
-            }
-            drawerLayout.closeDrawer(GravityCompat.END);
-            return true;
-        });
+        tvGreeting.setText("식물 추가");
 
         // 물 주기 수정 아이콘 클릭 리스너
         ivWaterEdit.setOnClickListener(v -> showWateringCycleDialog());
 
         // 메모 추가 버튼 클릭 리스너
-        ivMemoAdd.setOnClickListener(v -> addMemoView());
+        ivMemoAdd.setOnClickListener(v -> addMemoView(""));
+        // 메모 수정 버튼 클릭 리스너
+        ivMemoEdit.setOnClickListener(v -> toggleMemoEditMode());
 
         // 저장 버튼 클릭 리스너
         btnSave.setOnClickListener(v -> savePlantData());
@@ -106,7 +80,7 @@ public class AddPlantActivity extends AppCompatActivity {
         tvWaterSubtitle.setText("물 주기는 " + wateringCycle + "일 입니다.");
         
         //초기 메모 입력창 추가
-        addMemoView();
+        addMemoView("");
     }
 
     private void showWateringCycleDialog() {
@@ -129,10 +103,21 @@ public class AddPlantActivity extends AppCompatActivity {
         builder.create().show();
     }
 
-    private void addMemoView() {
+    private void addMemoView(String text) {
         LayoutInflater inflater = LayoutInflater.from(this);
         View memoView = inflater.inflate(R.layout.memo_item, llMemoContainer, false);
+        EditText etMemo = memoView.findViewById(R.id.et_memo_item);
+        etMemo.setText(text);
         llMemoContainer.addView(memoView);
+    }
+
+    private void toggleMemoEditMode() {
+        isEditMode = !isEditMode;
+        for (int i = 0; i < llMemoContainer.getChildCount(); i++) {
+            View memoView = llMemoContainer.getChildAt(i);
+            ImageView ivDeleteMemo = memoView.findViewById(R.id.iv_delete_memo);
+            ivDeleteMemo.setVisibility(isEditMode ? View.VISIBLE : View.GONE);
+        }
     }
 
     private void savePlantData() {
@@ -155,7 +140,7 @@ public class AddPlantActivity extends AppCompatActivity {
         }
 
         new Thread(() -> {
-            try (Connection conn = new DatabaseConnector().getConnection()) {
+            try (Connection conn = new DatabaseConnector(this).getConnection()) {
                 String sql = "INSERT INTO plants (user_id, species, nickname, watering_cycle, last_watered_date) VALUES (?, ?, ?, ?, ?)";
                 try (PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
                     pstmt.setString(1, userId);
@@ -199,19 +184,6 @@ public class AddPlantActivity extends AppCompatActivity {
                 showToast("오류가 발생했습니다: " + e.getMessage());
             }
         }).start();
-    }
-
-    private void logout() {
-        SharedPreferences sharedPreferences = getSharedPreferences("AutoLoginPrefs", MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.clear();
-        editor.apply();
-
-        Toast.makeText(this, "로그아웃되었습니다.", Toast.LENGTH_SHORT).show();
-
-        Intent intent = new Intent(AddPlantActivity.this, LoginActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
     }
     
     private void showToast(String message) {

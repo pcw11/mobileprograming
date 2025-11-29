@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
     private WeatherAdapter weatherAdapter;
     private LinearLayout indicatorLayout;
     private ImageView[] indicators;
-    private TextView tvGreeting;
+    private TextView tvGreeting, tvPlantCount;
     private String currentUserId;
 
     @Override
@@ -71,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
         plantList = new ArrayList<>();
         weatherViewPager = findViewById(R.id.vp_weather);
         indicatorLayout = findViewById(R.id.ll_indicator);
+        tvPlantCount = findViewById(R.id.tv_plant_count);
 
         // 환영 메시지 설정
         Intent intent = getIntent();
@@ -131,8 +132,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadPlantData() {
         new Thread(() -> {
-            try (Connection conn = new DatabaseConnector().getConnection()) {
-                String sql = "SELECT p.plant_id, p.nickname, p.species, p.main_image_url, p.watering_cycle, GROUP_CONCAT(pm.content SEPARATOR '\\n') as memos " +
+            try (Connection conn = new DatabaseConnector(this).getConnection()) {
+                String sql = "SELECT p.plant_id, p.nickname, p.species, p.main_image_url, p.watering_cycle, p.last_watered_date, GROUP_CONCAT(pm.content SEPARATOR '\n') as memos " +
                              "FROM plants p LEFT JOIN plant_memos pm ON p.plant_id = pm.plant_id " +
                              "WHERE p.user_id = ? GROUP BY p.plant_id";
                 try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -146,17 +147,19 @@ public class MainActivity extends AppCompatActivity {
                         String species = rs.getString("species");
                         String imageUrl = rs.getString("main_image_url");
                         int wateringCycle = rs.getInt("watering_cycle");
+                        String lastWateredDate = rs.getString("last_watered_date");
                         String memosConcat = rs.getString("memos");
                         List<String> memos = new ArrayList<>();
                         if(memosConcat != null) {
-                            memos.addAll(Arrays.asList(memosConcat.split("\\n")));
+                            memos.addAll(Arrays.asList(memosConcat.split("\n")));
                         }
 
-                        plantList.add(new Plant(plantId, species, nickname, imageUrl, memos, wateringCycle, false)); // isWatered는 임시값
+                        plantList.add(new Plant(plantId, species, nickname, imageUrl, memos, lastWateredDate, wateringCycle));
                     }
 
                     new Handler(Looper.getMainLooper()).post(() -> {
                         adapter.notifyDataSetChanged();
+                        tvPlantCount.setText("총 " + plantList.size() + "개의 식물이 등록되어 있어요.");
                         if(plantList.isEmpty()) {
                             Toast.makeText(this, "등록된 식물이 없습니다.", Toast.LENGTH_SHORT).show();
                         }

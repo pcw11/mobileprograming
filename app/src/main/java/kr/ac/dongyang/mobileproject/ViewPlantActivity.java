@@ -39,7 +39,7 @@ public class ViewPlantActivity extends AppCompatActivity {
     private int wateringCycle = 7;
     private long plantId;
     private boolean isEditMode = false;
-
+    // TODO 식물 뷰어 날짜 연동 가능하도록 & 사진 추가
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

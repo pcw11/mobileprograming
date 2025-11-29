@@ -43,10 +43,13 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import kr.ac.dongyang.mobileproject.plant.Plant;
@@ -60,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
-    private ImageView ivMenu;
+    private ImageView ivMenu, ivNotification;
     private RecyclerView recyclerView;
     private PlantAdapter adapter;
     private ArrayList<Plant> plantList;
@@ -81,6 +84,7 @@ public class MainActivity extends AppCompatActivity {
         drawerLayout = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
         ivMenu = findViewById(R.id.iv_menu);
+        ivNotification = findViewById(R.id.iv_notification);
         tvGreeting = findViewById(R.id.tv_greeting);
         recyclerView = findViewById(R.id.rv_plant_list);
         fabAdd = findViewById(R.id.fab_add);
@@ -182,7 +186,7 @@ public class MainActivity extends AppCompatActivity {
                         String nickname = rs.getString("nickname");
                         String species = rs.getString("species");
                         String imageUrl = rs.getString("main_image_url");
-                        int wateringCycle = rs.getInt("watering_cycle");
+                        int waterCycle = rs.getInt("watering_cycle");
                         String lastWateredDate = rs.getString("last_watered_date");
                         String memosConcat = rs.getString("memos");
                         List<String> memos = new ArrayList<>();
@@ -190,7 +194,7 @@ public class MainActivity extends AppCompatActivity {
                             memos.addAll(Arrays.asList(memosConcat.split("\\n")));
                         }
 
-                        plantList.add(new Plant(plantId, species, nickname, imageUrl, memos, lastWateredDate, wateringCycle));
+                        plantList.add(new Plant(plantId, species, nickname, imageUrl, memos, lastWateredDate, waterCycle));
                     }
 
                     new Handler(Looper.getMainLooper()).post(() -> {
@@ -199,6 +203,7 @@ public class MainActivity extends AppCompatActivity {
                         if (plantList.isEmpty()) {
                             Toast.makeText(this, "등록된 식물이 없습니다.", Toast.LENGTH_SHORT).show();
                         }
+                        checkWateringNeeded();
                     });
                 }
             } catch (Exception e) {
@@ -208,6 +213,49 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
         }).start();
+    }
+
+    private void checkWateringNeeded() {
+        List<String> plantsToWater = new ArrayList<>();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        String today = sdf.format(new Date());
+
+        for (Plant plant : plantList) {
+            try {
+                Date lastWatered = sdf.parse(plant.getLastWateredDate());
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(lastWatered);
+                calendar.add(Calendar.DAY_OF_YEAR, plant.getWaterCycle());
+                String nextWateringDay = sdf.format(calendar.getTime());
+
+                if (today.equals(nextWateringDay)) {
+                    plantsToWater.add(plant.getNickname());
+                }
+            } catch (Exception e) {
+                Log.e("DATE_PARSE_ERROR", "날짜 파싱 오류", e);
+            }
+        }
+
+        if (!plantsToWater.isEmpty()) {
+            ivNotification.setImageResource(android.R.drawable.ic_dialog_info); // bellpoint 아이콘으로 교체 필요
+            ivNotification.setOnClickListener(v -> showWateringListDialog(plantsToWater));
+        } else {
+            ivNotification.setImageResource(R.drawable.bell);
+            ivNotification.setOnClickListener(null);
+        }
+    }
+
+    private void showWateringListDialog(List<String> plantsToWater) {
+        StringBuilder message = new StringBuilder("오늘 물을 줘야 할 식물:\n\n");
+        for (String plantName : plantsToWater) {
+            message.append("- ").append(plantName).append("\n");
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("물주기 알림")
+                .setMessage(message.toString())
+                .setPositiveButton("확인", null)
+                .show();
     }
 
     private void logout() {

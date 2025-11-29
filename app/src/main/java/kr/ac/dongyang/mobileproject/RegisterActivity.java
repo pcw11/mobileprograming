@@ -148,7 +148,7 @@ public class RegisterActivity extends AppCompatActivity {
         binding.cbAgreePrivacy.setOnCheckedChangeListener(individualCheckboxListener);
         binding.cbAgreeAds.setOnCheckedChangeListener(individualCheckboxListener);
     }
-
+    // TODO 회원가입 비밀번호 검증 오류 수정
     private void validatePassword() {
         String password = binding.etPassword.getText().toString().trim();
         // 8자 이상, 영문, 숫자, 특수문자 포함

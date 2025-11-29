@@ -15,8 +15,8 @@
         android:layout_height="match_parent"
         android:background="@color/l_green"
         android:paddingTop="16dp"
-        android:paddingStart="20dp"
-        android:paddingEnd="20dp">
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
 
         <TextView
             android:id="@+id/tv_greeting"

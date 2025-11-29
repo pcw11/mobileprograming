@@ -11,10 +11,13 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -44,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import kr.ac.dongyang.mobileproject.plant.Plant;
 import kr.ac.dongyang.mobileproject.plant.PlantAdapter;
@@ -106,6 +110,8 @@ public class MainActivity extends AppCompatActivity {
                 showAccountSettingsDialog();
             } else if (id == R.id.nav_notifications) {
                 showNotificationSettingsDialog();
+            } else if (id == R.id.nav_reset_data) {
+                showResetDataConfirmDialog();
             } else {
                 Toast.makeText(MainActivity.this, "준비 중인 기능입니다.", Toast.LENGTH_SHORT).show();
             }
@@ -272,17 +278,213 @@ public class MainActivity extends AppCompatActivity {
         TextView tvChangeEmail = view.findViewById(R.id.tv_change_email);
 
         tvChangePassword.setOnClickListener(v -> {
-            Toast.makeText(this, "비밀번호 변경 기능은 준비 중입니다.", Toast.LENGTH_SHORT).show();
+            showChangePasswordDialog();
             dialog.dismiss();
         });
 
         tvChangeEmail.setOnClickListener(v -> {
-            Toast.makeText(this, "이메일 변경 기능은 준비 중입니다.", Toast.LENGTH_SHORT).show();
+            showChangeEmailDialog();
             dialog.dismiss();
         });
 
         dialog.show();
     }
+
+    private void showChangeEmailDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_change_email, null);
+        builder.setView(view);
+
+        EditText etCurrentEmail = view.findViewById(R.id.et_current_email);
+        EditText etNewEmail = view.findViewById(R.id.et_new_email);
+        Button btnVerifyEmail = view.findViewById(R.id.btn_verify_email);
+
+        // 현재 이메일 가져오기
+        new Thread(() -> {
+            try (Connection conn = new DatabaseConnector(this).getConnection()) {
+                String sql = "SELECT email FROM users WHERE user_id = ?";
+                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    pstmt.setString(1, currentUserId);
+                    ResultSet rs = pstmt.executeQuery();
+                    if (rs.next()) {
+                        String currentEmail = rs.getString("email");
+                        new Handler(Looper.getMainLooper()).post(() -> etCurrentEmail.setText(currentEmail));
+                    }
+                }
+            } catch (Exception e) {
+                Log.e("DB_ERROR", "이메일 로딩 중 오류 발생", e);
+            }
+        }).start();
+
+        final boolean[] isEmailVerified = {false};
+
+        btnVerifyEmail.setOnClickListener(v -> {
+            String newEmail = etNewEmail.getText().toString().trim();
+            if (Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) {
+                isEmailVerified[0] = true;
+                Toast.makeText(this, "이메일이 확인되었습니다.", Toast.LENGTH_SHORT).show();
+            } else {
+                isEmailVerified[0] = false;
+                Toast.makeText(this, "유효하지 않은 이메일 형식입니다.", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        builder.setTitle("이메일 변경")
+                .setPositiveButton("저장", (dialog, which) -> {
+                    if (!isEmailVerified[0]) {
+                        Toast.makeText(this, "이메일 인증을 먼저 진행해주세요.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    String newEmail = etNewEmail.getText().toString().trim();
+                    updateEmail(newEmail);
+                })
+                .setNegativeButton("취소", null);
+
+        builder.create().show();
+    }
+
+    private void updateEmail(String newEmail) {
+        new Thread(() -> {
+            try (Connection conn = new DatabaseConnector(this).getConnection()) {
+                String sql = "UPDATE users SET email = ? WHERE user_id = ?";
+                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    pstmt.setString(1, newEmail);
+                    pstmt.setString(2, currentUserId);
+                    int affectedRows = pstmt.executeUpdate();
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        if (affectedRows > 0) {
+                            Toast.makeText(this, "이메일이 성공적으로 변경되었습니다.", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(this, "이메일 변경에 실패했습니다.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                Log.e("DB_ERROR", "이메일 업데이트 중 오류 발생", e);
+                new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(this, "데이터베이스 오류가 발생했습니다.", Toast.LENGTH_SHORT).show());
+            }
+        }).start();
+    }
+
+    private void showChangePasswordDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_change_password, null);
+        builder.setView(view);
+
+        EditText etCurrentPassword = view.findViewById(R.id.et_current_password);
+        EditText etNewPassword = view.findViewById(R.id.et_new_password);
+        EditText etConfirmNewPassword = view.findViewById(R.id.et_confirm_new_password);
+
+        builder.setTitle("비밀번호 변경")
+                .setPositiveButton("저장", (dialog, which) -> {
+                    String currentPassword = etCurrentPassword.getText().toString();
+                    String newPassword = etNewPassword.getText().toString();
+                    String confirmNewPassword = etConfirmNewPassword.getText().toString();
+
+                    if (currentPassword.isEmpty() || newPassword.isEmpty() || confirmNewPassword.isEmpty()) {
+                        Toast.makeText(this, "모든 필드를 입력해주세요.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    if (!newPassword.equals(confirmNewPassword)) {
+                        Toast.makeText(this, "새 비밀번호가 일치하지 않습니다.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    if (!isValidPassword(newPassword)) {
+                        Toast.makeText(this, "비밀번호는 8글자 이상, 숫자, 기호를 포함해야 합니다.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    updatePassword(currentPassword, newPassword);
+                })
+                .setNegativeButton("취소", null);
+
+        builder.create().show();
+    }
+
+    private void updatePassword(String currentPassword, String newPassword) {
+        new Thread(() -> {
+            try (Connection conn = new DatabaseConnector(this).getConnection()) {
+                // 1. 현재 비밀번호 확인
+                String checkSql = "SELECT password FROM users WHERE user_id = ?";
+                try (PreparedStatement checkPstmt = conn.prepareStatement(checkSql)) {
+                    checkPstmt.setString(1, currentUserId);
+                    ResultSet rs = checkPstmt.executeQuery();
+
+                    if (rs.next()) {
+                        String dbPassword = rs.getString("password");
+                        if (dbPassword.equals(currentPassword)) {
+                            // 2. 비밀번호 업데이트
+                            String updateSql = "UPDATE users SET password = ? WHERE user_id = ?";
+                            try (PreparedStatement updatePstmt = conn.prepareStatement(updateSql)) {
+                                updatePstmt.setString(1, newPassword);
+                                updatePstmt.setString(2, currentUserId);
+                                int affectedRows = updatePstmt.executeUpdate();
+                                new Handler(Looper.getMainLooper()).post(() -> {
+                                    if (affectedRows > 0) {
+                                        Toast.makeText(this, "비밀번호가 성공적으로 변경되었습니다.", Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        Toast.makeText(this, "비밀번호 변경에 실패했습니다.", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+                        } else {
+                            new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(this, "현재 비밀번호가 일치하지 않습니다.", Toast.LENGTH_SHORT).show());
+                        }
+                    } else {
+                        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(this, "사용자 정보를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show());
+                    }
+                }
+            } catch (Exception e) {
+                Log.e("DB_ERROR", "비밀번호 업데이트 중 오류 발생", e);
+                new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(this, "데이터베이스 오류가 발생했습니다.", Toast.LENGTH_SHORT).show());
+            }
+        }).start();
+    }
+
+    private boolean isValidPassword(String password) {
+        if (password.length() < 8) {
+            return false;
+        }
+        Pattern hasNumber = Pattern.compile("[0-9]");
+        Pattern hasSymbol = Pattern.compile("[^a-zA-Z0-9]");
+        return hasNumber.matcher(password).find() && hasSymbol.matcher(password).find();
+    }
+
+    private void showResetDataConfirmDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("데이터 초기화")
+                .setMessage("저장된 모든 식물 데이터가 삭제됩니다. 진행하시겠습니까?")
+                .setPositiveButton("확인", (dialog, which) -> resetPlantData())
+                .setNegativeButton("취소", null)
+                .show();
+    }
+
+    private void resetPlantData() {
+        new Thread(() -> {
+            try (Connection conn = new DatabaseConnector(this).getConnection()) {
+                // CASCADE 설정으로 plants 테이블 데이터만 삭제해도 plant_memos, plant_images 데이터도 삭제됨
+                String sql = "DELETE FROM plants WHERE user_id = ?";
+                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    pstmt.setString(1, currentUserId);
+                    int affectedRows = pstmt.executeUpdate();
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        if (affectedRows > 0) {
+                            Toast.makeText(this, "모든 식물 데이터가 삭제되었습니다.", Toast.LENGTH_SHORT).show();
+                            loadPlantData(); // 목록 새로고침
+                        } else {
+                            Toast.makeText(this, "삭제할 데이터가 없습니다.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                Log.e("DB_ERROR", "데이터 초기화 중 오류 발생", e);
+                new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(this, "데이터 초기화에 실패했습니다.", Toast.LENGTH_SHORT).show());
+            }
+        }).start();
+    }
+
 
     private void showNotificationSettingsDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);

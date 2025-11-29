@@ -16,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
@@ -90,6 +91,8 @@ public class MainActivity extends AppCompatActivity {
             int id = item.getItemId();
             if (id == R.id.nav_logout) {
                 logout();
+            } else if (id == R.id.nav_account) {
+                showAccountSettingsDialog();
             } else {
                 Toast.makeText(MainActivity.this, "준비 중인 기능입니다.", Toast.LENGTH_SHORT).show();
             }
@@ -231,5 +234,28 @@ public class MainActivity extends AppCompatActivity {
             indicators[i].setImageDrawable(ContextCompat.getDrawable(this,
                     i == position ? R.drawable.tab_indicator_selected : R.drawable.tab_indicator_default));
         }
+    }
+
+    private void showAccountSettingsDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_account_settings, null);
+        builder.setView(view);
+
+        AlertDialog dialog = builder.create();
+
+        TextView tvChangePassword = view.findViewById(R.id.tv_change_password);
+        TextView tvChangeEmail = view.findViewById(R.id.tv_change_email);
+
+        tvChangePassword.setOnClickListener(v -> {
+            Toast.makeText(this, "비밀번호 변경 기능은 준비 중입니다.", Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+        });
+
+        tvChangeEmail.setOnClickListener(v -> {
+            Toast.makeText(this, "이메일 변경 기능은 준비 중입니다.", Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+        });
+
+        dialog.show();
     }
 }

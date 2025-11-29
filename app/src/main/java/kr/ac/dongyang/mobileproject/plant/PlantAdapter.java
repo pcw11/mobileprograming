@@ -9,6 +9,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.bumptech.glide.Glide;
+
 import java.util.ArrayList;
 
 import kr.ac.dongyang.mobileproject.R;
@@ -33,28 +36,42 @@ public class PlantAdapter extends RecyclerView.Adapter<PlantAdapter.PlantViewHol
     public void onBindViewHolder(@NonNull PlantViewHolder holder, int position) {
         Plant plant = plantList.get(position);
 
-        // 필수 데이터 설정
+        // 식물 이름 설정
         holder.tvName.setText(plant.getName());
-        holder.tvDDay.setText("물 주기까지 앞으로 " + plant.getWaterDDay() + "일 남았어요!");
-        
-        // 프로필 이미지 (임시로 기본 이미지 설정)
-        // TODO: 나중에 실제 식물 이미지를 불러오는 로직 추가 필요 (Glide, Picasso 등)
-        holder.ivProfile.setImageResource(R.drawable.plant_sample); 
 
-        // 별명 데이터 확인 및 뷰 가시성 설정
-        if (!TextUtils.isEmpty(plant.getNickname())) {
+        // 별명 유무에 따라 TextView 가시성 조절
+        if (plant.getNickname() != null && !plant.getNickname().isEmpty()) {
             holder.tvNickname.setVisibility(View.VISIBLE);
             holder.tvNickname.setText(plant.getNickname());
         } else {
             holder.tvNickname.setVisibility(View.GONE);
         }
 
-        // 메모 데이터 확인 및 뷰 가시성 설정
-        if (!TextUtils.isEmpty(plant.getMemo())) {
+        // 사진 URL 유무에 따라 ImageView 가시성 조절
+        if (plant.getImageUrl() != null && !plant.getImageUrl().isEmpty()) {
+            holder.ivProfile.setVisibility(View.VISIBLE);
+            // Glide 라이브러리를 사용하여 이미지 로드 (app/build.gradle.kts 에 추가 필요)
+            Glide.with(holder.itemView.getContext())
+                    .load(plant.getImageUrl())
+                    .into(holder.ivProfile);
+        } else {
+            holder.ivProfile.setVisibility(View.GONE);
+        }
+
+        // 메모 유무에 따라 LinearLayout 가시성 조절 (첫 번째 메모만 표시)
+        // TODO: 여러 메모를 보여주는 방식은 추후 기획에 따라 변경될 수 있습니다.
+        if (plant.getMemo() != null && !plant.getMemo().isEmpty()) {
             holder.llMemoContainer.setVisibility(View.VISIBLE);
             holder.tvMemo.setText(plant.getMemo());
         } else {
             holder.llMemoContainer.setVisibility(View.GONE);
+        }
+
+        // 물 주기 D-day 설정 (isWatered 값에 따라 분기 처리)
+        if(plant.isWatered()){
+            holder.tvDDay.setText("물주기 D-" + plant.getWaterDDay());
+        } else {
+            holder.tvDDay.setText("물주기 D+" + plant.getWaterDDay());
         }
     }
 

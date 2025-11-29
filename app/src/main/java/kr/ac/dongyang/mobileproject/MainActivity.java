@@ -3,6 +3,9 @@ package kr.ac.dongyang.mobileproject;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
@@ -12,6 +15,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
@@ -23,6 +27,9 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +37,8 @@ import kr.ac.dongyang.mobileproject.plant.Plant;
 import kr.ac.dongyang.mobileproject.plant.PlantAdapter;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final int ADD_PLANT_REQUEST = 1;
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
@@ -85,12 +94,6 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
-        // 2. 더미 데이터(기본 식물들) 추가
-        plantList.add(new Plant("아이비", "초록이", "그늘을 좋아해요", 4, true));
-        plantList.add(new Plant("선인장", "가시돌이", "물 자주 주지 말것", 17, false));
-        plantList.add(new Plant("스투키", "공기청정기", "침실에 두면 좋음", 7, true));
-        plantList.add(new Plant("몬스테라", "왕잎", "잎이 갈라질 때까지", 2, true));
-
         // 3. 어댑터 생성 및 연결
         adapter = new PlantAdapter(plantList);
         recyclerView.setAdapter(adapter);
@@ -105,11 +108,66 @@ public class MainActivity extends AppCompatActivity {
         fabAdd.setOnClickListener(v -> {
             Intent addPlantIntent = new Intent(MainActivity.this, AddPlantActivity.class);
             addPlantIntent.putExtra("USER_ID", currentUserId); // 현재 사용자 ID 전달
-            startActivity(addPlantIntent);
+            startActivityForResult(addPlantIntent, ADD_PLANT_REQUEST);
         });
 
         // 6. 날씨 뷰페이저 설정
         setupWeatherViewPager();
+        
+        // 7. DB에서 식물 목록 불러오기
+        loadPlantData();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == ADD_PLANT_REQUEST && resultCode == RESULT_OK) {
+            // 식물 추가/수정/삭제 후 돌아왔을 때 목록 새로고침
+            loadPlantData();
+        }
+    }
+
+    private void loadPlantData() {
+        new Thread(() -> {
+            try (Connection conn = new DatabaseConnector().getConnection()) {
+                String sql = "SELECT p.plant_id, p.nickname, p.species, p.main_image_url, p.watering_cycle, GROUP_CONCAT(pm.content SEPARATOR '\n') as memos " +
+                             "FROM plants p LEFT JOIN plant_memos pm ON p.plant_id = pm.plant_id " +
+                             "WHERE p.user_id = ? GROUP BY p.plant_id";
+                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    pstmt.setString(1, currentUserId);
+                    ResultSet rs = pstmt.executeQuery();
+
+                    plantList.clear();
+                    while (rs.next()) {
+                        String nickname = rs.getString("nickname");
+                        String species = rs.getString("species");
+                        String imageUrl = rs.getString("main_image_url");
+                        int wateringCycle = rs.getInt("watering_cycle");
+                        String memosConcat = rs.getString("memos");
+                        List<String> memos = new ArrayList<>();
+                        if(memosConcat != null) {
+                            for(String memo : memosConcat.split("\n")) {
+                                memos.add(memo);
+                            }
+                        }
+
+                        plantList.add(new Plant(species, nickname, imageUrl, memos, wateringCycle, false)); // isWatered는 임시값
+                    }
+
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        adapter.notifyDataSetChanged();
+                        if(plantList.isEmpty()) {
+                            Toast.makeText(this, "등록된 식물이 없습니다.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                Log.e("DB_ERROR", "식물 목록 로딩 중 오류 발생", e);
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    Toast.makeText(this, "식물 목록을 불러오는데 실패했습니다.", Toast.LENGTH_SHORT).show();
+                });
+            }
+        }).start();
     }
 
     private void logout() {

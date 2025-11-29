@@ -1,26 +1,38 @@
 package kr.ac.dongyang.mobileproject.plant;
-//package com.example.myplantapp; // 패키지명은 본인 프로젝트에 맞게 수정하세요
+
+import java.util.List;
 
 public class Plant {
     private String name;        // 식물 이름 (예: 아이비)
     private String nickname;    // 별명 (예: 초록이)
-    private String memo;        // 메모 내용
+    private String imageUrl;    // 이미지 URL
+    private List<String> memos; // 메모 목록
     private int waterDDay;      // 물주기 남은 날짜
-    private boolean hasImage;   // 이미지가 있는지 여부 (높이 변화 테스트용)
+    private boolean isWatered;   // 물을 주었는지 여부
 
     // 생성자 (Constructor)
-    public Plant(String name, String nickname, String memo, int waterDDay, boolean hasImage) {
+    public Plant(String name, String nickname, String imageUrl, List<String> memos, int waterDDay, boolean isWatered) {
         this.name = name;
         this.nickname = nickname;
-        this.memo = memo;
+        this.imageUrl = imageUrl;
+        this.memos = memos;
         this.waterDDay = waterDDay;
-        this.hasImage = hasImage;
+        this.isWatered = isWatered;
     }
 
     // Getter 함수들
     public String getName() { return name; }
     public String getNickname() { return nickname; }
-    public String getMemo() { return memo; }
+    public String getImageUrl() { return imageUrl; }
+    public List<String> getMemos() { return memos; }
     public int getWaterDDay() { return waterDDay; }
-    public boolean isHasImage() { return hasImage; }
+    public boolean isWatered() { return isWatered; }
+
+    // 첫번째 메모만 반환하는 편의 메소드
+    public String getMemo() {
+        if (memos != null && !memos.isEmpty()) {
+            return memos.get(0);
+        }
+        return null;
+    }
 }

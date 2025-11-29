@@ -24,6 +24,7 @@
             android:layout_height="wrap_content"
             android:scaleType="centerCrop"
             android:layout_margin="4dp"
+            android:visibility="gone"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -50,6 +51,7 @@
             android:layout_marginTop="2dp"
             android:textColor="@color/gray"
             android:textSize="14sp"
+            android:visibility="gone"
             app:layout_constraintTop_toBottomOf="@+id/tv_plant_name"
             app:layout_constraintStart_toStartOf="@+id/tv_plant_name"
             tools:text="별명" />
@@ -64,6 +66,7 @@
             android:background="@drawable/bg_memo"
             android:orientation="vertical"
             android:padding="12dp"
+            android:visibility="gone"
             app:layout_constraintTop_toBottomOf="@+id/tv_plant_nickname"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
@@ -89,10 +92,11 @@
 
         <TextView
             android:id="@+id/tv_water_dday"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="16dp"
+            android:layout_marginStart="8dp"
             android:textColor="#4CAF50"
             android:textSize="12sp"
             app:layout_constraintTop_toBottomOf="@+id/ll_memo_container"

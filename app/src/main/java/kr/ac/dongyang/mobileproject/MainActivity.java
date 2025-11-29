@@ -43,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout indicatorLayout;
     private ImageView[] indicators;
     private TextView tvGreeting;
+    private String currentUserId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,9 +63,9 @@ public class MainActivity extends AppCompatActivity {
 
         // 환영 메시지 설정
         Intent intent = getIntent();
-        String userId = intent.getStringExtra("USER_ID");
-        if (userId != null && !userId.isEmpty()) {
-            tvGreeting.setText(userId + "님 안녕하세요!");
+        currentUserId = intent.getStringExtra("USER_ID");
+        if (currentUserId != null && !currentUserId.isEmpty()) {
+            tvGreeting.setText(currentUserId + "님 안녕하세요!");
         } else {
             tvGreeting.setText("안녕하세요!");
         }
@@ -103,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
         // 5. FAB 버튼 클릭 이벤트 - 식물 추가 화면으로 이동
         fabAdd.setOnClickListener(v -> {
             Intent addPlantIntent = new Intent(MainActivity.this, AddPlantActivity.class);
+            addPlantIntent.putExtra("USER_ID", currentUserId); // 현재 사용자 ID 전달
             startActivity(addPlantIntent);
         });
 
@@ -124,15 +126,6 @@ public class MainActivity extends AppCompatActivity {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
     }
-
-    // 이 메소드는 이제 사용되지 않음
-    // private void addNewPlant() {
-    //     Plant newPlant = new Plant("새로운 식물", "뉴비", "새로 들어왔어요!", 5, true);
-    //     plantList.add(newPlant);
-    //     adapter.notifyItemInserted(plantList.size() - 1);
-    //     recyclerView.smoothScrollToPosition(plantList.size() - 1);
-    //     Toast.makeText(this, "새 식물이 추가되었습니다!", Toast.LENGTH_SHORT).show();
-    // }
 
     private void setupWeatherViewPager() {
         List<Weather> weatherList = new ArrayList<>();

@@ -15,4 +15,8 @@
     <color name="register_error">#FF0000</color>
     <color name="register_button_text_disabled">#979797</color>
     <color name="darker_gray">#AAA</color>
+
+    <!-- Add Plant -->
+    <color name="add_plant_card_bg">#F7FDED</color>
+
 </resources>

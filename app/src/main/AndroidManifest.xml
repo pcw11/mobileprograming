@@ -52,6 +52,11 @@
             android:screenOrientation="portrait"
             android:exported="false" />
 
+        <activity
+            android:name=".ViewPlantActivity"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+
     </application>
 
 </manifest>

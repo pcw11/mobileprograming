@@ -31,6 +31,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import kr.ac.dongyang.mobileproject.plant.Plant;
@@ -38,7 +39,8 @@ import kr.ac.dongyang.mobileproject.plant.PlantAdapter;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final int ADD_PLANT_REQUEST = 1;
+    public static final int ADD_PLANT_REQUEST = 1;
+    public static final int VIEW_PLANT_REQUEST = 2;
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
@@ -121,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == ADD_PLANT_REQUEST && resultCode == RESULT_OK) {
+        if ((requestCode == ADD_PLANT_REQUEST || requestCode == VIEW_PLANT_REQUEST) && resultCode == RESULT_OK) {
             // 식물 추가/수정/삭제 후 돌아왔을 때 목록 새로고침
             loadPlantData();
         }
@@ -130,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
     private void loadPlantData() {
         new Thread(() -> {
             try (Connection conn = new DatabaseConnector().getConnection()) {
-                String sql = "SELECT p.plant_id, p.nickname, p.species, p.main_image_url, p.watering_cycle, GROUP_CONCAT(pm.content SEPARATOR '\n') as memos " +
+                String sql = "SELECT p.plant_id, p.nickname, p.species, p.main_image_url, p.watering_cycle, GROUP_CONCAT(pm.content SEPARATOR '\\n') as memos " +
                              "FROM plants p LEFT JOIN plant_memos pm ON p.plant_id = pm.plant_id " +
                              "WHERE p.user_id = ? GROUP BY p.plant_id";
                 try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -139,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
 
                     plantList.clear();
                     while (rs.next()) {
+                        long plantId = rs.getLong("plant_id");
                         String nickname = rs.getString("nickname");
                         String species = rs.getString("species");
                         String imageUrl = rs.getString("main_image_url");
@@ -146,12 +149,10 @@ public class MainActivity extends AppCompatActivity {
                         String memosConcat = rs.getString("memos");
                         List<String> memos = new ArrayList<>();
                         if(memosConcat != null) {
-                            for(String memo : memosConcat.split("\n")) {
-                                memos.add(memo);
-                            }
+                            memos.addAll(Arrays.asList(memosConcat.split("\\n")));
                         }
 
-                        plantList.add(new Plant(species, nickname, imageUrl, memos, wateringCycle, false)); // isWatered는 임시값
+                        plantList.add(new Plant(plantId, species, nickname, imageUrl, memos, wateringCycle, false)); // isWatered는 임시값
                     }
 
                     new Handler(Looper.getMainLooper()).post(() -> {

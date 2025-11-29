@@ -1,20 +1,27 @@
 package kr.ac.dongyang.mobileproject;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.Gravity;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.navigation.NavigationView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +31,9 @@ import kr.ac.dongyang.mobileproject.plant.PlantAdapter;
 
 public class MainActivity extends AppCompatActivity {
 
+    private DrawerLayout drawerLayout;
+    private NavigationView navigationView;
+    private ImageView ivMenu;
     private RecyclerView recyclerView;
     private PlantAdapter adapter;
     private ArrayList<Plant> plantList;
@@ -40,6 +50,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         // 1. 초기화
+        drawerLayout = findViewById(R.id.drawer_layout);
+        navigationView = findViewById(R.id.nav_view);
+        ivMenu = findViewById(R.id.iv_menu);
         tvGreeting = findViewById(R.id.tv_greeting);
         recyclerView = findViewById(R.id.rv_plant_list);
         fabAdd = findViewById(R.id.fab_add);
@@ -53,12 +66,27 @@ public class MainActivity extends AppCompatActivity {
         if (userId != null && !userId.isEmpty()) {
             tvGreeting.setText(userId + "님 안녕하세요!");
         } else {
-            tvGreeting.setText("안녕하세요!"); // ID가 없는 경우 기본 메시지
+            tvGreeting.setText("안녕하세요!");
         }
+
+        // 메뉴 버튼 클릭 리스너
+        ivMenu.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.END));
+
+        // 네비게이션 메뉴 아이템 클릭 리스너
+        navigationView.setNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_logout) {
+                logout();
+            } else {
+                Toast.makeText(MainActivity.this, "준비 중인 기능입니다.", Toast.LENGTH_SHORT).show();
+            }
+            drawerLayout.closeDrawer(GravityCompat.END);
+            return true;
+        });
 
         // 2. 더미 데이터(기본 식물들) 추가
         plantList.add(new Plant("아이비", "초록이", "그늘을 좋아해요", 4, true));
-        plantList.add(new Plant("선인장", "가시돌이", "물 자주 주지 말것", 17, false)); // 이미지 없음
+        plantList.add(new Plant("선인장", "가시돌이", "물 자주 주지 말것", 17, false));
         plantList.add(new Plant("스투키", "공기청정기", "침실에 두면 좋음", 7, true));
         plantList.add(new Plant("몬스테라", "왕잎", "잎이 갈라질 때까지", 2, true));
 
@@ -66,26 +94,45 @@ public class MainActivity extends AppCompatActivity {
         adapter = new PlantAdapter(plantList);
         recyclerView.setAdapter(adapter);
 
-        // 4. [중요] 레이아웃 매니저 설정 (지그재그 배치)
+        // 4. 레이아웃 매니저 설정
         StaggeredGridLayoutManager layoutManager =
                 new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
         layoutManager.setGapStrategy(StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS);
         recyclerView.setLayoutManager(layoutManager);
 
-        // 5. FAB 버튼 클릭 이벤트 (식물 추가)
-        fabAdd.setOnClickListener(v -> addNewPlant());
+        // 5. FAB 버튼 클릭 이벤트 - 식물 추가 화면으로 이동
+        fabAdd.setOnClickListener(v -> {
+            Intent addPlantIntent = new Intent(MainActivity.this, AddPlantActivity.class);
+            startActivity(addPlantIntent);
+        });
 
         // 6. 날씨 뷰페이저 설정
         setupWeatherViewPager();
     }
 
-    private void addNewPlant() {
-        Plant newPlant = new Plant("새로운 식물", "뉴비", "새로 들어왔어요!", 5, true);
-        plantList.add(newPlant);
-        adapter.notifyItemInserted(plantList.size() - 1);
-        recyclerView.smoothScrollToPosition(plantList.size() - 1);
-        Toast.makeText(this, "새 식물이 추가되었습니다!", Toast.LENGTH_SHORT).show();
+    private void logout() {
+        // 자동 로그인 정보 삭제
+        SharedPreferences sharedPreferences = getSharedPreferences("AutoLoginPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.clear();
+        editor.apply();
+
+        Toast.makeText(this, "로그아웃되었습니다.", Toast.LENGTH_SHORT).show();
+
+        // 로그인 화면으로 이동
+        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
     }
+
+    // 이 메소드는 이제 사용되지 않음
+    // private void addNewPlant() {
+    //     Plant newPlant = new Plant("새로운 식물", "뉴비", "새로 들어왔어요!", 5, true);
+    //     plantList.add(newPlant);
+    //     adapter.notifyItemInserted(plantList.size() - 1);
+    //     recyclerView.smoothScrollToPosition(plantList.size() - 1);
+    //     Toast.makeText(this, "새 식물이 추가되었습니다!", Toast.LENGTH_SHORT).show();
+    // }
 
     private void setupWeatherViewPager() {
         List<Weather> weatherList = new ArrayList<>();
@@ -111,7 +158,7 @@ public class MainActivity extends AppCompatActivity {
         indicators = new ImageView[count];
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        params.setMargins(16, 0, 16, 0);
+        params.setMargins(0, 0, 0, 0);
 
         indicatorLayout.removeAllViews();
 

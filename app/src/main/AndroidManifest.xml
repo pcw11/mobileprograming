@@ -46,6 +46,12 @@
             android:screenOrientation="portrait"
             android:exported="false"
             />
+
+        <activity
+            android:name=".AddPlantActivity"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+
     </application>
 
 </manifest>

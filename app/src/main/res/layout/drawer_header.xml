@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="bottom">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="© 2025 Group_3. All rights reserved.\nThis application and all of its contents (including text, images, data, code, UI design, icons, and logos) are protected by copyright laws and international treaties.\nUnauthorized reproduction, distribution, modification, reverse engineering, resale, or creation of derivative works is strictly prohibited.\n\'Group_3\' and its logo are trademarks or service marks owned by their respective holders.\nCommercial use of any part of this application without prior written consent is prohibited."
+        android:textSize="10sp"
+        android:textColor="#666666" />
+
+</LinearLayout>

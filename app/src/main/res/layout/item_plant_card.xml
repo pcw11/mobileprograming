@@ -1,75 +1,103 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView
+<com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="4dp"
-    app:cardBackgroundColor="#E8F5E9"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="2dp">
+    android:layout_margin="8dp"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="4dp">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="12dp">
+        android:layout_height="wrap_content">
 
-        <ImageView
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/iv_plant_profile"
-            android:layout_width="match_parent"
-            android:layout_height="120dp"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
             android:scaleType="centerCrop"
-            android:src="@android:drawable/ic_menu_gallery"
-            android:layout_marginBottom="8dp"/>
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintDimensionRatio="4:3"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.App.Corner.Top"
+            tools:src="@drawable/plant_sample" />
 
         <TextView
             android:id="@+id/tv_plant_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:layout_marginStart="16dp"
             android:fontFamily="@font/pretendard_b"
-            tools:text="아이비"
-            android:textColor="#333333"
-            android:textSize="16sp" />
+            android:textColor="@color/black"
+            android:textSize="20sp"
+            app:layout_constraintTop_toBottomOf="@+id/iv_plant_profile"
+            app:layout_constraintStart_toStartOf="parent"
+            tools:text="아이비" />
 
         <TextView
             android:id="@+id/tv_plant_nickname"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
             android:fontFamily="@font/pretendard_n"
-            tools:text="초록이"
-            android:textColor="#666666"
-            android:textSize="12sp" />
+            android:textColor="@color/gray"
+            android:textSize="14sp"
+            app:layout_constraintTop_toBottomOf="@+id/tv_plant_name"
+            app:layout_constraintStart_toStartOf="@+id/tv_plant_name"
+            tools:text="별명" />
 
-        <TextView
-            android:id="@+id/tv_label_memo"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:id="@+id/ll_memo_container"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:fontFamily="@font/pretendard_n"
-            android:text="Memo"
-            android:textColor="#FFA500"
-            android:textSize="11sp" />
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/bg_memo"
+            android:orientation="vertical"
+            android:padding="12dp"
+            app:layout_constraintTop_toBottomOf="@+id/tv_plant_nickname"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
 
-        <TextView
-            android:id="@+id/tv_memo_content"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/pretendard_n"
-            tools:text="직사광선 피하기\n물은 일주일에 한번"
-            android:textColor="#666666"
-            android:textSize="11sp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Memo"
+                android:textColor="#D3C01F"
+                android:fontFamily="@font/pretendard_b"
+                android:textSize="12sp"/>
+
+            <TextView
+                android:id="@+id/tv_memo_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/pretendard_n"
+                android:textColor="@color/gray"
+                android:textSize="12sp"
+                tools:text="2020.09.01 ~\n창가 근처 그늘 좋아함\n발코니 벽" />
+
+        </LinearLayout>
 
         <TextView
             android:id="@+id/tv_water_dday"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp"
             android:fontFamily="@font/pretendard_n"
-            tools:text="물 주기까지 앞으로 4일 남았어요!"
             android:textColor="#4CAF50"
-            android:textSize="10sp" />
+            android:textSize="12sp"
+            app:layout_constraintTop_toBottomOf="@+id/ll_memo_container"
+            app:layout_constraintStart_toStartOf="@+id/ll_memo_container"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:text="물 주기까지 앞으로 4일 남았어요!" />
 
-    </LinearLayout>
-</androidx.cardview.widget.CardView>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

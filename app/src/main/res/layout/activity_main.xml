@@ -14,12 +14,12 @@
         android:id="@+id/tv_greeting"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:fontFamily="@font/pretendard_b"
         android:text="동그래님 안녕하세요!"
         android:textColor="#333333"
         android:textSize="22sp"
-        android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/iv_notification"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
@@ -45,59 +45,36 @@
         app:layout_constraintBottom_toBottomOf="@+id/tv_greeting"
         tools:src="@drawable/menubtn"/>
 
-    <ImageView
-        android:id="@+id/iv_weather_icon"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/vp_weather"
+        android:layout_width="0dp"
+        android:layout_height="80dp"
         android:layout_marginTop="24dp"
-        android:src="@drawable/sunny"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_greeting"
-        tools:src="@android:drawable/ic_menu_day"/>
+        app:layout_constraintTop_toBottomOf="@+id/tv_greeting" />
 
-    <TextView
-        android:id="@+id/tv_location"
+    <LinearLayout
+        android:id="@+id/ll_indicator"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:text="서울특별시 구로구 고척동"
-        android:textColor="#555555"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:layout_constraintStart_toEndOf="@+id/iv_weather_icon"
-        app:layout_constraintTop_toTopOf="@+id/iv_weather_icon" />
-
-    <TextView
-        android:id="@+id/tv_weather_temp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="맑음 19°C🌡"
-        android:textColor="#555555"
-        android:textSize="15sp"
-        app:layout_constraintStart_toStartOf="@+id/tv_location"
-        app:layout_constraintTop_toBottomOf="@+id/tv_location" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="..."
-        android:textColor="#999999"
-        android:textSize="20sp"
-        android:layout_marginTop="4dp"
-        app:layout_constraintStart_toStartOf="@+id/tv_location"
-        app:layout_constraintTop_toBottomOf="@+id/tv_weather_temp"/>
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/vp_weather" />
 
     <TextView
         android:id="@+id/tv_plant_count"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="16dp"
+        android:fontFamily="@font/pretendard_n"
         android:text="총 7개의 식물이 등록되어 있어요."
         android:textColor="#666666"
         android:textSize="13sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/iv_weather_icon" />
+        app:layout_constraintTop_toBottomOf="@+id/ll_indicator" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_plant_list"

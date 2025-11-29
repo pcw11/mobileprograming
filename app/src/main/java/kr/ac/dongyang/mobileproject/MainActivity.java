@@ -1,13 +1,23 @@
 package kr.ac.dongyang.mobileproject;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
+import androidx.viewpager2.widget.ViewPager2;
+
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
 import java.util.ArrayList;
+import java.util.List;
 
 import kr.ac.dongyang.mobileproject.plant.Plant;
 import kr.ac.dongyang.mobileproject.plant.PlantAdapter;
@@ -18,6 +28,11 @@ public class MainActivity extends AppCompatActivity {
     private PlantAdapter adapter;
     private ArrayList<Plant> plantList;
     private FloatingActionButton fabAdd;
+    private ViewPager2 weatherViewPager;
+    private WeatherAdapter weatherAdapter;
+    private LinearLayout indicatorLayout;
+    private ImageView[] indicators;
+    private TextView tvGreeting;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,9 +40,21 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         // 1. 초기화
+        tvGreeting = findViewById(R.id.tv_greeting);
         recyclerView = findViewById(R.id.rv_plant_list);
         fabAdd = findViewById(R.id.fab_add);
         plantList = new ArrayList<>();
+        weatherViewPager = findViewById(R.id.vp_weather);
+        indicatorLayout = findViewById(R.id.ll_indicator);
+
+        // 환영 메시지 설정
+        Intent intent = getIntent();
+        String userId = intent.getStringExtra("USER_ID");
+        if (userId != null && !userId.isEmpty()) {
+            tvGreeting.setText(userId + "님 안녕하세요!");
+        } else {
+            tvGreeting.setText("안녕하세요!"); // ID가 없는 경우 기본 메시지
+        }
 
         // 2. 더미 데이터(기본 식물들) 추가
         plantList.add(new Plant("아이비", "초록이", "그늘을 좋아해요", 4, true));
@@ -40,40 +67,67 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
 
         // 4. [중요] 레이아웃 매니저 설정 (지그재그 배치)
-        // SPAN_COUNT = 2 (두 줄), VERTICAL (세로 스크롤)
         StaggeredGridLayoutManager layoutManager =
                 new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
-
-        // 아이템 이동 시 빈 공간 방지
         layoutManager.setGapStrategy(StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS);
         recyclerView.setLayoutManager(layoutManager);
 
         // 5. FAB 버튼 클릭 이벤트 (식물 추가)
-        fabAdd.setOnClickListener(new View.OnClickListener() {
+        fabAdd.setOnClickListener(v -> addNewPlant());
+
+        // 6. 날씨 뷰페이저 설정
+        setupWeatherViewPager();
+    }
+
+    private void addNewPlant() {
+        Plant newPlant = new Plant("새로운 식물", "뉴비", "새로 들어왔어요!", 5, true);
+        plantList.add(newPlant);
+        adapter.notifyItemInserted(plantList.size() - 1);
+        recyclerView.smoothScrollToPosition(plantList.size() - 1);
+        Toast.makeText(this, "새 식물이 추가되었습니다!", Toast.LENGTH_SHORT).show();
+    }
+
+    private void setupWeatherViewPager() {
+        List<Weather> weatherList = new ArrayList<>();
+        weatherList.add(new Weather(R.drawable.sunny, "서울특별시 구로구 고척동", "맑음 19°C🌡"));
+        weatherList.add(new Weather(R.drawable.cloud, "경기도 부천시 역곡동", "구름 많음 18°C☁️"));
+        weatherList.add(new Weather(R.drawable.rain, "인천광역시 미추홀구", "비 17°C🌧️"));
+
+        weatherAdapter = new WeatherAdapter(weatherList);
+        weatherViewPager.setAdapter(weatherAdapter);
+
+        setupIndicators(weatherAdapter.getItemCount());
+
+        weatherViewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
-            public void onClick(View v) {
-                addNewPlant();
+            public void onPageSelected(int position) {
+                super.onPageSelected(position);
+                updateIndicators(position);
             }
         });
     }
 
-    // 식물을 추가하는 함수
-    private void addNewPlant() {
-        // 실제 앱에서는 여기서 입력창(Dialog)을 띄워야 하지만,
-        // 지금은 테스트를 위해 임의의 식물을 바로 추가합니다.
+    private void setupIndicators(int count) {
+        indicators = new ImageView[count];
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.setMargins(16, 0, 16, 0);
 
-        Plant newPlant = new Plant("새로운 식물", "뉴비", "새로 들어왔어요!", 5, true);
+        indicatorLayout.removeAllViews();
 
-        // 리스트에 데이터 추가
-        plantList.add(newPlant);
+        for (int i = 0; i < indicators.length; i++) {
+            indicators[i] = new ImageView(this);
+            indicators[i].setImageDrawable(ContextCompat.getDrawable(this, R.drawable.tab_indicator_default));
+            indicators[i].setLayoutParams(params);
+            indicatorLayout.addView(indicators[i]);
+        }
+        updateIndicators(0); // 초기 상태 설정
+    }
 
-        // 어댑터에게 "데이터 추가됐으니 화면 갱신해!"라고 알림
-        // (전체 갱신인 notifyDataSetChanged()보다 효율적입니다)
-        adapter.notifyItemInserted(plantList.size() - 1);
-
-        // 스크롤을 맨 아래(새로 추가된 곳)로 이동
-        recyclerView.smoothScrollToPosition(plantList.size() - 1);
-
-        Toast.makeText(this, "새 식물이 추가되었습니다!", Toast.LENGTH_SHORT).show();
+    private void updateIndicators(int position) {
+        for (int i = 0; i < indicators.length; i++) {
+            indicators[i].setImageDrawable(ContextCompat.getDrawable(this,
+                    i == position ? R.drawable.tab_indicator_selected : R.drawable.tab_indicator_default));
+        }
     }
 }

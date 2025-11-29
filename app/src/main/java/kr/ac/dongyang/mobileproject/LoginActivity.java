@@ -1,6 +1,7 @@
 package kr.ac.dongyang.mobileproject;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -24,12 +25,15 @@ import kr.ac.dongyang.mobileproject.databinding.LoginBinding;
 public class LoginActivity extends AppCompatActivity {
 
     private LoginBinding binding;
+    private SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = LoginBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        sharedPreferences = getSharedPreferences("AutoLoginPrefs", MODE_PRIVATE);
 
         binding.tvFindPassword.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, FindPasswordActivity.class);
@@ -65,6 +69,21 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         chkEmpty(); // 초기 버튼 상태 설정
+        checkAutoLogin(); // 자동 로그인 확인
+    }
+
+    private void checkAutoLogin() {
+        boolean isAutoLoginEnabled = sharedPreferences.getBoolean("isAutoLogin", false);
+        binding.cbAutoLogin.setChecked(isAutoLoginEnabled);
+
+        if (isAutoLoginEnabled) {
+            String savedId = sharedPreferences.getString("userId", null);
+            String savedPw = sharedPreferences.getString("password", null);
+            if (savedId != null && savedPw != null) {
+                Toast.makeText(this, "자동 로그인 중입니다...", Toast.LENGTH_SHORT).show();
+                login(savedId, savedPw);
+            }
+        }
     }
 
     private void login(final String userId, final String password) {
@@ -108,12 +127,27 @@ public class LoginActivity extends AppCompatActivity {
 
             String finalResultMessage = resultMessage;
             handler.post(() -> {
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+
                 if ("SUCCESS".equals(finalResultMessage)) {
+                    if (binding.cbAutoLogin.isChecked()) {
+                        editor.putString("userId", userId);
+                        editor.putString("password", password);
+                        editor.putBoolean("isAutoLogin", true);
+                    } else {
+                        editor.clear();
+                    }
+                    editor.apply();
+
                     Toast.makeText(LoginActivity.this, "로그인 성공!", Toast.LENGTH_SHORT).show();
                     Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                    intent.putExtra("USER_ID", userId); // 사용자 ID 전달
                     startActivity(intent);
-                    finish(); // 로그인 성공 시 현재 액티비티 종료
+                    finish();
                 } else {
+                    // 자동 로그인 실패 시 저장된 정보 삭제
+                    editor.clear();
+                    editor.apply();
                     Toast.makeText(LoginActivity.this, finalResultMessage, Toast.LENGTH_LONG).show();
                 }
             });

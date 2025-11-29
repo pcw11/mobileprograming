@@ -28,15 +28,16 @@
             android:id="@+id/tv_plant_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/pretendard_b"
             tools:text="아이비"
             android:textColor="#333333"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/tv_plant_nickname"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/pretendard_n"
             tools:text="초록이"
             android:textColor="#666666"
             android:textSize="12sp" />
@@ -46,6 +47,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
+            android:fontFamily="@font/pretendard_n"
             android:text="Memo"
             android:textColor="#FFA500"
             android:textSize="11sp" />
@@ -54,6 +56,7 @@
             android:id="@+id/tv_memo_content"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/pretendard_n"
             tools:text="직사광선 피하기\n물은 일주일에 한번"
             android:textColor="#666666"
             android:textSize="11sp" />
@@ -63,6 +66,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:fontFamily="@font/pretendard_n"
             tools:text="물 주기까지 앞으로 4일 남았어요!"
             android:textColor="#4CAF50"
             android:textSize="10sp" />

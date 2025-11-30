@@ -19,7 +19,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.sql.ResultSet; // 추가
+import java.sql.Statement;
 import java.util.List;
 import java.util.Locale;
 
@@ -37,10 +38,17 @@ public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.WeatherV
     private Context context;
     private String userId; // 현재 사용자 ID
 
-    public WeatherAdapter(List<Weather> weatherList, Context context, String userId) {
+    // MainActivity의 날씨 목록을 새로고침하기 위한 리스너
+    public interface WeatherDataReloadListener {
+        void reloadWeatherData();
+    }
+    private WeatherDataReloadListener reloadListener;
+
+    public WeatherAdapter(List<Weather> weatherList, Context context, String userId, WeatherDataReloadListener listener) {
         this.weatherList = weatherList;
         this.context = context;
         this.userId = userId;
+        this.reloadListener = listener;
     }
 
     @NonNull
@@ -58,11 +66,11 @@ public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.WeatherV
         holder.temperature.setText(weather.getTemperature());
 
         holder.ivEditLocation.setOnClickListener(v -> {
-            showSearchDialog(position);
+            showSearchDialog(weather.getLocationId(), position);
         });
     }
 
-    private void showSearchDialog(int position) {
+    private void showSearchDialog(long locationId, int position) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         View view = LayoutInflater.from(context).inflate(R.layout.dialog_search_address, null);
         builder.setView(view);
@@ -87,13 +95,12 @@ public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.WeatherV
                         lvResults.setAdapter(adapter);
                         lvResults.setOnItemClickListener((parent, view1, pos, id) -> {
                             AddressSearcher.AddressItem selectedAddress = addressList.get(pos);
-
-                            // UI 업데이트 및 날씨 정보 갱신
-                            weatherList.get(position).setLocation(selectedAddress.title);
-                            fetchAndUpdateWeather(position, selectedAddress.title, selectedAddress.y, selectedAddress.x);
-
-                            // DB에 선택된 위치 정보 저장
-                            saveLocationToDatabase(selectedAddress.title, selectedAddress.y, selectedAddress.x);
+                            
+                            if (locationId == -1) { // "지역 추가" 카드인 경우
+                                addNewLocation(selectedAddress.title, selectedAddress.y, selectedAddress.x);
+                            } else { // 기존 지역 카드인 경우
+                                updateLocation(locationId, selectedAddress.title, selectedAddress.y, selectedAddress.x, position);
+                            }
 
                             dialog.dismiss();
                         });
@@ -110,23 +117,47 @@ public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.WeatherV
         dialog.show();
     }
 
-    private void saveLocationToDatabase(String regionName, String y, String x) {
+    private void addNewLocation(String regionName, String y, String x) {
         new Thread(() -> {
             try (Connection conn = new DatabaseConnector(context).getConnection()) {
-                String sql = "INSERT INTO saved_locations (user_id, region_name, nx, ny) VALUES (?, ?, ?, ?) " +
-                             "ON DUPLICATE KEY UPDATE nx = VALUES(nx), ny = VALUES(ny), reload_at = CURRENT_TIMESTAMP";
-
-                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                String sql = "INSERT INTO saved_locations (user_id, region_name, nx, ny) VALUES (?, ?, ?, ?)";
+                try (PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
                     pstmt.setString(1, userId);
                     pstmt.setString(2, regionName);
-                    pstmt.setDouble(3, Double.parseDouble(x)); // nx
-                    pstmt.setDouble(4, Double.parseDouble(y)); // ny
-
+                    pstmt.setDouble(3, Double.parseDouble(x));
+                    pstmt.setDouble(4, Double.parseDouble(y));
                     pstmt.executeUpdate();
-                    Log.i("DB_SAVE", "지역 정보 저장/업데이트 성공: " + regionName);
+                    // 메인 액티비티의 날씨 목록 전체를 새로고침하도록 요청
+                    ((MainActivity) context).runOnUiThread(() -> reloadListener.reloadWeatherData());
+                    Log.i("DB_INSERT", "새 지역 추가 성공: " + regionName);
                 }
             } catch (Exception e) {
-                Log.e("DB_SAVE", "지역 정보 저장 중 오류 발생", e);
+                Log.e("DB_INSERT", "새 지역 추가 중 오류", e);
+            }
+        }).start();
+    }
+
+    private void updateLocation(long locationId, String newRegionName, String y, String x, int position) {
+        new Thread(() -> {
+            try (Connection conn = new DatabaseConnector(context).getConnection()) {
+                String sql = "UPDATE saved_locations SET region_name = ?, nx = ?, ny = ?, reload_at = CURRENT_TIMESTAMP WHERE id = ?";
+                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    pstmt.setString(1, newRegionName);
+                    pstmt.setDouble(2, Double.parseDouble(x));
+                    pstmt.setDouble(3, Double.parseDouble(y));
+                    pstmt.setLong(4, locationId);
+                    pstmt.executeUpdate();
+                    
+                    // 즉시 UI 업데이트 및 날씨 정보 갱신
+                    ((MainActivity) context).runOnUiThread(() -> {
+                        Weather weatherItem = weatherList.get(position);
+                        weatherItem.setLocation(newRegionName);
+                        fetchAndUpdateWeather(position, newRegionName, y, x);
+                    });
+                    Log.i("DB_UPDATE", "지역 정보 업데이트 성공: " + newRegionName);
+                }
+            } catch (Exception e) {
+                Log.e("DB_UPDATE", "지역 정보 업데이트 중 오류", e);
             }
         }).start();
     }
@@ -150,19 +181,17 @@ public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.WeatherV
                     weatherItem.setTemperature(String.format(Locale.getDefault(), "%.1f°C %s", temp, description));
                     weatherItem.setIcon(getWeatherIcon(description));
 
-                    // DB에 날씨 정보 저장
                     saveWeatherDataToDatabase(regionName, temp, description);
 
                     notifyItemChanged(position);
-                    Toast.makeText(context, "날씨 정보가 업데이트되었습니다.", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(context, "날씨 정보를 가져오는 데 실패했습니다.", Toast.LENGTH_SHORT).show();
+                     // Handle error
                 }
             }
 
             @Override
             public void onFailure(Call<WeatherResponse> call, Throwable t) {
-                Toast.makeText(context, "날씨 API 호출 실패: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                 // Handle failure
             }
         });
     }
@@ -170,7 +199,6 @@ public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.WeatherV
     private void saveWeatherDataToDatabase(String regionName, double temperature, String weatherStatus) {
         new Thread(() -> {
             try (Connection conn = new DatabaseConnector(context).getConnection()) {
-                // 1. region_name으로 location_id 조회
                 long locationId = -1;
                 String selectSql = "SELECT id FROM saved_locations WHERE user_id = ? AND region_name = ?";
                 try (PreparedStatement selectPstmt = conn.prepareStatement(selectSql)) {
@@ -183,12 +211,8 @@ public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.WeatherV
                     }
                 }
 
-                if (locationId == -1) {
-                    Log.e("DB_SAVE_WEATHER", "해당 지역을 찾을 수 없습니다: " + regionName);
-                    return; // 위치 정보가 없으면 중단
-                }
+                if (locationId == -1) return;
 
-                // 2. weather_data 테이블에 날씨 정보 저장 또는 업데이트
                 String insertSql = "INSERT INTO weather_data (location_id, temperature, weather_status) VALUES (?, ?, ?) " +
                                  "ON DUPLICATE KEY UPDATE temperature = VALUES(temperature), weather_status = VALUES(weather_status), updated_at = CURRENT_TIMESTAMP";
                 try (PreparedStatement insertPstmt = conn.prepareStatement(insertSql)) {
@@ -196,24 +220,18 @@ public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.WeatherV
                     insertPstmt.setDouble(2, temperature);
                     insertPstmt.setString(3, weatherStatus);
                     insertPstmt.executeUpdate();
-                    Log.i("DB_SAVE_WEATHER", "날씨 정보 저장/업데이트 성공 for location_id: " + locationId);
                 }
             } catch (Exception e) {
-                Log.e("DB_SAVE_WEATHER", "날씨 정보 저장 중 오류 발생", e);
+                Log.e("DB_SAVE_WEATHER", "날씨 정보 저장 중 오류", e);
             }
         }).start();
     }
 
     private int getWeatherIcon(String description) {
-        if (description.contains("맑음")) {
-            return R.drawable.sunny;
-        } else if (description.contains("구름") || description.contains("흐림")) {
-            return R.drawable.cloud;
-        } else if (description.contains("비")) {
-            return R.drawable.rain;
-        } else {
-            return R.drawable.sunny; // Default icon
-        }
+        if (description.contains("맑음")) return R.drawable.sunny;
+        if (description.contains("구름") || description.contains("흐림")) return R.drawable.cloud;
+        if (description.contains("비")) return R.drawable.rain;
+        return R.drawable.sunny; // Default
     }
 
     @Override
@@ -222,10 +240,8 @@ public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.WeatherV
     }
 
     static class WeatherViewHolder extends RecyclerView.ViewHolder {
-        ImageView icon;
-        TextView location;
-        TextView temperature;
-        ImageView ivEditLocation;
+        ImageView icon, ivEditLocation;
+        TextView location, temperature;
 
         public WeatherViewHolder(@NonNull View itemView) {
             super(itemView);

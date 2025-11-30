@@ -79,7 +79,7 @@ import retrofit2.http.Multipart;
 import retrofit2.http.POST;
 import retrofit2.http.Part;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements WeatherAdapter.WeatherDataReloadListener {
 
     public static final int ADD_PLANT_REQUEST = 1;
     public static final int VIEW_PLANT_REQUEST = 2;
@@ -203,6 +203,11 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         new Handler(Looper.getMainLooper()).postDelayed(this::loadPlantData, 1000); // 1초 지연
         loadSavedWeatherData(); // 날씨 데이터 로드
+    }
+
+    @Override
+    public void reloadWeatherData() {
+        loadSavedWeatherData();
     }
 
     private void openGallery() {
@@ -430,7 +435,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupWeatherViewPager() {
-        weatherAdapter = new WeatherAdapter(weatherList, this, currentUserId);
+        weatherAdapter = new WeatherAdapter(weatherList, this, currentUserId, this);
         weatherViewPager.setAdapter(weatherAdapter);
 
         weatherViewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
@@ -465,12 +470,12 @@ public class MainActivity extends AppCompatActivity {
                         boolean needsUpdate = (updatedAt == null || (System.currentTimeMillis() - updatedAt.getTime()) > 30 * 60 * 1000);
 
                         if (needsUpdate) {
-                            newWeatherList.add(new Weather(R.drawable.cloud, regionName, "갱신 중..."));
+                            newWeatherList.add(new Weather(locationId, R.drawable.cloud, regionName, "갱신 중..."));
                             updateWeatherForLocation(locationId, regionName, ny, nx);
                         } else {
                             String temperatureText = String.format(Locale.getDefault(), "%.1f°C %s", temperature, weatherStatus);
                             int weatherIcon = getWeatherIcon(weatherStatus);
-                            newWeatherList.add(new Weather(weatherIcon, regionName, temperatureText));
+                            newWeatherList.add(new Weather(locationId, weatherIcon, regionName, temperatureText));
                         }
                     }
                 }
@@ -480,11 +485,13 @@ public class MainActivity extends AppCompatActivity {
 
             runOnUiThread(() -> {
                 weatherList.clear();
-                if (newWeatherList.isEmpty()) {
-                    weatherList.add(new Weather(R.drawable.edit, "지역을 검색하여 추가하세요", ""));
-                } else {
-                    weatherList.addAll(newWeatherList);
+                weatherList.addAll(newWeatherList);
+
+                // 저장된 지역이 3개 미만일 때 "지역 추가" 카드 추가
+                if (weatherList.size() < 3) {
+                    weatherList.add(new Weather(-1, R.drawable.edit, "지역 추가", ""));
                 }
+
                 weatherAdapter.notifyDataSetChanged();
                 setupIndicators(weatherList.size());
             });
@@ -507,7 +514,7 @@ public class MainActivity extends AppCompatActivity {
 
                     runOnUiThread(() -> {
                         for (Weather item : weatherList) {
-                            if (item.getLocation().equals(regionName)) {
+                            if (item.getLocationId() == locationId) {
                                 item.setTemperature(String.format(Locale.getDefault(), "%.1f°C %s", temp, description));
                                 item.setIcon(getWeatherIcon(description));
                                 weatherAdapter.notifyDataSetChanged();

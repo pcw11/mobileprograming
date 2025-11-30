@@ -1,5 +1,6 @@
 package kr.ac.dongyang.mobileproject;
-
+// TODO 알림 작동 위한 기능 추가, 식물 추가 버튼 수정, 뒤로가기 두번 작동시만 종료, 잠깐 나갔다 왔을때 백그라운드에 살아 있지 않고 다시 리로딩 되는 부분 수정, 세부 메뉴서 드로워 미동작 문제. 디자인 refine
+// TODO 전반적인 색상 수정(날짜 색상, 글자 검은색 색상
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;

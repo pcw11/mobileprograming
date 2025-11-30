@@ -14,6 +14,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.Gravity;
@@ -115,6 +116,14 @@ public class MainActivity extends AppCompatActivity {
         // 1. 초기화
         drawerLayout = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
+
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int width = displayMetrics.widthPixels;
+        ViewGroup.LayoutParams params = navigationView.getLayoutParams();
+        params.width = (int) (width * 0.66);
+        navigationView.setLayoutParams(params);
+
         ivMenu = findViewById(R.id.iv_menu);
         ivNotification = findViewById(R.id.iv_notification);
         tvGreeting = findViewById(R.id.tv_greeting);

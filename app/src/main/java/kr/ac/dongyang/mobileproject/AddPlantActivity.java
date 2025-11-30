@@ -10,6 +10,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -107,6 +108,13 @@ public class AddPlantActivity extends AppCompatActivity {
         rvPhotos = findViewById(R.id.rv_photos);
         llWaterDates = findViewById(R.id.ll_water_dates);
         btnSave = findViewById(R.id.btn_save);
+
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int width = displayMetrics.widthPixels;
+        ViewGroup.LayoutParams params = navigationView.getLayoutParams();
+        params.width = (int) (width * 0.66);
+        navigationView.setLayoutParams(params);
 
         fileUploadManager = new FileUploadManager(this);
 

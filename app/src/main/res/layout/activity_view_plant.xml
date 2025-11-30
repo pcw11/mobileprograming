@@ -259,7 +259,7 @@
                         android:layout_marginEnd="8dp"
                         android:src="@drawable/edit"
                         app:tint="@color/gray"
-                        app:layout_constraintEnd_toStartOf="@+id/iv_memo_add"
+                        app:layout_constraintEnd_toStartOf="@id/iv_memo_add"
                         app:layout_constraintTop_toTopOf="@+id/tv_memo_title"
                         app:layout_constraintBottom_toBottomOf="@+id/tv_memo_title" />
 
@@ -300,7 +300,7 @@
 
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/nav_view"
-        android:layout_width="wrap_content"
+        android:layout_width="300dp"
         android:layout_height="match_parent"
         android:layout_gravity="end"
         android:background="@color/m_green"

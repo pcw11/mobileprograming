@@ -11,6 +11,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -98,6 +99,15 @@ public class ViewPlantActivity extends AppCompatActivity {
 
         drawerLayout = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
+
+        // 너비 조절
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int width = displayMetrics.widthPixels;
+        ViewGroup.LayoutParams params = navigationView.getLayoutParams();
+        params.width = (int) (width * 0.66);
+        navigationView.setLayoutParams(params);
+
         ivMenu = findViewById(R.id.iv_menu);
         etPlantSpecies = findViewById(R.id.et_plant_species);
         etPlantNickname = findViewById(R.id.et_plant_nickname);

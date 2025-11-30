@@ -29,6 +29,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -50,6 +51,7 @@ public class ViewPlantActivity extends AppCompatActivity {
     private int wateringCycle = 7;
     private long plantId;
     private boolean isEditMode = false;
+    private Date lastWateredDate;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -102,7 +104,7 @@ public class ViewPlantActivity extends AppCompatActivity {
     private void loadPlantDetails() {
         new Thread(() -> {
             try (Connection conn = new DatabaseConnector(this).getConnection()) {
-                String sql = "SELECT p.species, p.nickname, p.watering_cycle, p.user_id, GROUP_CONCAT(pm.content SEPARATOR '\n') as memos " +
+                String sql = "SELECT p.species, p.nickname, p.watering_cycle, p.user_id, p.last_watered_date, GROUP_CONCAT(pm.content SEPARATOR '\n') as memos " +
                              "FROM plants p LEFT JOIN plant_memos pm ON p.plant_id = pm.plant_id " +
                              "WHERE p.plant_id = ? GROUP BY p.plant_id";
                 try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -114,6 +116,7 @@ public class ViewPlantActivity extends AppCompatActivity {
                         String nickname = rs.getString("nickname");
                         String userId = rs.getString("user_id");
                         wateringCycle = rs.getInt("watering_cycle");
+                        lastWateredDate = rs.getDate("last_watered_date");
                         String memosConcat = rs.getString("memos");
 
                         new Handler(Looper.getMainLooper()).post(() -> {
@@ -168,6 +171,13 @@ public class ViewPlantActivity extends AppCompatActivity {
         Calendar calendar = Calendar.getInstance();
         int today = calendar.get(Calendar.DAY_OF_MONTH);
 
+        Calendar nextWateringCal = null;
+        if (lastWateredDate != null) {
+            nextWateringCal = Calendar.getInstance();
+            nextWateringCal.setTime(lastWateredDate);
+            nextWateringCal.add(Calendar.DAY_OF_MONTH, wateringCycle);
+        }
+
         calendar.add(Calendar.DAY_OF_MONTH, -3);
 
         for (int i = 0; i < 8; i++) {
@@ -176,6 +186,7 @@ public class ViewPlantActivity extends AppCompatActivity {
             TextView tvDayOfWeek = dateView.findViewById(R.id.tv_day_of_week);
             TextView tvDate = dateView.findViewById(R.id.tv_date);
             ImageView ivTodayDot = dateView.findViewById(R.id.iv_today_dot);
+            ImageView ivWaterBg = dateView.findViewById(R.id.iv_water_bg);
 
             int day = calendar.get(Calendar.DAY_OF_MONTH);
             int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
@@ -189,6 +200,14 @@ public class ViewPlantActivity extends AppCompatActivity {
                 ivTodayDot.setVisibility(View.VISIBLE);
             } else {
                 ivTodayDot.setVisibility(View.GONE);
+            }
+
+            if (nextWateringCal != null &&
+                calendar.get(Calendar.YEAR) == nextWateringCal.get(Calendar.YEAR) &&
+                calendar.get(Calendar.DAY_OF_YEAR) == nextWateringCal.get(Calendar.DAY_OF_YEAR)) {
+                ivWaterBg.setVisibility(View.VISIBLE);
+            } else {
+                ivWaterBg.setVisibility(View.GONE);
             }
 
             int color = ContextCompat.getColor(this, R.color.black);

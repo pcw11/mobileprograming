@@ -2,24 +2,29 @@ package kr.ac.dongyang.mobileproject;
 
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.NumberPicker;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.sql.Connection;
 import java.sql.Date;
@@ -27,22 +32,26 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 
 public class AddPlantActivity extends AppCompatActivity {
 
     private TextView tvGreeting;
-
     private EditText etPlantSpecies, etPlantNickname;
     private ImageView ivWaterEdit, ivMemoAdd, ivMemoEdit;
     private TextView tvWaterSubtitle;
     private Button btnSave;
-    private LinearLayout llMemoContainer;
+    private RecyclerView rvMemos;
+    private LinearLayout llWaterDates;
+    private MemoAdapter memoAdapter;
+    private List<String> memoList = new ArrayList<>();
 
     private int wateringCycle = 7; // 기본 물 주기 7일
     private String userId;
     private boolean isEditMode = false;
+    private Date lastWateredDate;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -57,7 +66,8 @@ public class AddPlantActivity extends AppCompatActivity {
         tvWaterSubtitle = findViewById(R.id.tv_water_subtitle);
         ivMemoAdd = findViewById(R.id.iv_memo_add);
         ivMemoEdit = findViewById(R.id.iv_memo_edit);
-        llMemoContainer = findViewById(R.id.ll_memo_container);
+        rvMemos = findViewById(R.id.rv_memos);
+        llWaterDates = findViewById(R.id.ll_water_dates);
         btnSave = findViewById(R.id.btn_save);
 
         // MainActivity로부터 사용자 ID를 받아 환영 메시지 설정
@@ -65,11 +75,16 @@ public class AddPlantActivity extends AppCompatActivity {
         userId = intent.getStringExtra("USER_ID");
         tvGreeting.setText("식물 추가");
 
+        lastWateredDate = new Date(System.currentTimeMillis()); // 오늘을 마지막 물 준 날짜로 초기화
+
+        setupRecyclerViews();
+        updateDateViews();
+
         // 물 주기 수정 아이콘 클릭 리스너
         ivWaterEdit.setOnClickListener(v -> showWateringCycleDialog());
 
-        // 메모 추가 버튼 클릭 리스너
-        ivMemoAdd.setOnClickListener(v -> addMemoView(""));
+        // 메모 추가 버튼은 이제 RecyclerView 내부에 있음
+        ivMemoAdd.setVisibility(View.GONE);
         // 메모 수정 버튼 클릭 리스너
         ivMemoEdit.setOnClickListener(v -> toggleMemoEditMode());
 
@@ -78,9 +93,12 @@ public class AddPlantActivity extends AppCompatActivity {
 
         // 초기 물 주기 텍스트 설정
         tvWaterSubtitle.setText("물 주기는 " + wateringCycle + "일 입니다.");
-        
-        //초기 메모 입력창 추가
-        addMemoView("");
+    }
+
+    private void setupRecyclerViews() {
+        rvMemos.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        memoAdapter = new MemoAdapter(memoList);
+        rvMemos.setAdapter(memoAdapter);
     }
 
     private void showWateringCycleDialog() {
@@ -96,28 +114,78 @@ public class AddPlantActivity extends AppCompatActivity {
         builder.setPositiveButton("확인", (dialog, which) -> {
             wateringCycle = numberPicker.getValue();
             tvWaterSubtitle.setText("물 주기는 " + wateringCycle + "일 입니다.");
+            updateDateViews(); // 날짜 뷰 업데이트
             Toast.makeText(AddPlantActivity.this, "물 주기가 " + wateringCycle + "일로 설정되었습니다.", Toast.LENGTH_SHORT).show();
         });
         builder.setNegativeButton("취소", null);
 
         builder.create().show();
     }
-
-    private void addMemoView(String text) {
+    
+    private void updateDateViews() {
+        llWaterDates.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(this);
-        View memoView = inflater.inflate(R.layout.memo_item, llMemoContainer, false);
-        EditText etMemo = memoView.findViewById(R.id.et_memo_item);
-        etMemo.setText(text);
-        llMemoContainer.addView(memoView);
+
+        Calendar calendar = Calendar.getInstance();
+        int today = calendar.get(Calendar.DAY_OF_MONTH);
+
+        Calendar nextWateringCal = null;
+        if (lastWateredDate != null) {
+            nextWateringCal = Calendar.getInstance();
+            nextWateringCal.setTime(lastWateredDate);
+            nextWateringCal.add(Calendar.DAY_OF_MONTH, wateringCycle);
+        }
+
+        calendar.add(Calendar.DAY_OF_MONTH, -3); // 오늘을 기준으로 3일 전부터 표시
+
+        for (int i = 0; i < 8; i++) { // 8일간의 날짜를 표시
+            View dateView = inflater.inflate(R.layout.item_date, llWaterDates, false);
+
+            TextView tvDayOfWeek = dateView.findViewById(R.id.tv_day_of_week);
+            TextView tvDate = dateView.findViewById(R.id.tv_date);
+            ImageView ivTodayDot = dateView.findViewById(R.id.iv_today_dot);
+            ImageView ivWaterBg = dateView.findViewById(R.id.iv_water_bg);
+
+            int day = calendar.get(Calendar.DAY_OF_MONTH);
+            int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+
+            tvDate.setText(String.valueOf(day));
+
+            String[] daysOfWeek = {"", "일", "월", "화", "수", "목", "금", "토"};
+            tvDayOfWeek.setText(daysOfWeek[dayOfWeek]);
+
+            if (day == today) {
+                ivTodayDot.setVisibility(View.VISIBLE);
+            } else {
+                ivTodayDot.setVisibility(View.GONE);
+            }
+
+            if (nextWateringCal != null &&
+                calendar.get(Calendar.YEAR) == nextWateringCal.get(Calendar.YEAR) &&
+                calendar.get(Calendar.DAY_OF_YEAR) == nextWateringCal.get(Calendar.DAY_OF_YEAR)) {
+                ivWaterBg.setVisibility(View.VISIBLE);
+            } else {
+                ivWaterBg.setVisibility(View.GONE);
+            }
+
+            int color = ContextCompat.getColor(this, R.color.black);
+            if (dayOfWeek == Calendar.SATURDAY) {
+                color = ContextCompat.getColor(this, R.color.blue);
+            } else if (dayOfWeek == Calendar.SUNDAY) {
+                color = ContextCompat.getColor(this, R.color.red);
+            }
+            tvDate.setTextColor(color);
+            tvDayOfWeek.setTextColor(color);
+
+            llWaterDates.addView(dateView);
+            calendar.add(Calendar.DAY_OF_MONTH, 1);
+        }
     }
+
 
     private void toggleMemoEditMode() {
         isEditMode = !isEditMode;
-        for (int i = 0; i < llMemoContainer.getChildCount(); i++) {
-            View memoView = llMemoContainer.getChildAt(i);
-            ImageView ivDeleteMemo = memoView.findViewById(R.id.iv_delete_memo);
-            ivDeleteMemo.setVisibility(isEditMode ? View.VISIBLE : View.GONE);
-        }
+        memoAdapter.setEditMode(isEditMode);
     }
 
     private void savePlantData() {
@@ -129,15 +197,7 @@ public class AddPlantActivity extends AppCompatActivity {
             return;
         }
 
-        List<String> memos = new ArrayList<>();
-        for (int i = 0; i < llMemoContainer.getChildCount(); i++) {
-            View memoView = llMemoContainer.getChildAt(i);
-            EditText etMemo = memoView.findViewById(R.id.et_memo_item);
-            String memoText = etMemo.getText().toString().trim();
-            if (!memoText.isEmpty()) {
-                memos.add(memoText);
-            }
-        }
+        List<String> memos = memoAdapter.getMemos();
 
         new Thread(() -> {
             try (Connection conn = new DatabaseConnector(this).getConnection()) {
@@ -185,10 +245,119 @@ public class AddPlantActivity extends AppCompatActivity {
             }
         }).start();
     }
-    
+
     private void showToast(String message) {
         new Handler(Looper.getMainLooper()).post(() -> {
             Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
         });
+    }
+
+    // Adapter for the memo RecyclerView
+    class MemoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+        private static final int VIEW_TYPE_MEMO = 0;
+        private static final int VIEW_TYPE_ADD = 1;
+
+        private List<String> memos;
+        private boolean isEditMode = false;
+
+        public MemoAdapter(List<String> memos) {
+            this.memos = memos;
+        }
+
+        @Override
+        public int getItemViewType(int position) {
+            if (position == memos.size()) {
+                return VIEW_TYPE_ADD;
+            } else {
+                return VIEW_TYPE_MEMO;
+            }
+        }
+
+        @NonNull
+        @Override
+        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+            if (viewType == VIEW_TYPE_MEMO) {
+                View view = inflater.inflate(R.layout.item_memo, parent, false);
+                return new MemoViewHolder(view);
+            } else { // VIEW_TYPE_ADD
+                View view = inflater.inflate(R.layout.add_button, parent, false);
+                return new AddButtonViewHolder(view);
+            }
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+            if (holder.getItemViewType() == VIEW_TYPE_MEMO) {
+                MemoViewHolder memoHolder = (MemoViewHolder) holder;
+                String memoText = memos.get(position);
+                memoHolder.etMemoContent.setText(memoText);
+                memoHolder.ivDeleteMemo.setVisibility(isEditMode ? View.VISIBLE : View.GONE);
+
+                memoHolder.ivDeleteMemo.setOnClickListener(v -> {
+                    int currentPosition = memoHolder.getAdapterPosition();
+                    if (currentPosition != RecyclerView.NO_POSITION) {
+                        memos.remove(currentPosition);
+                        notifyItemRemoved(currentPosition);
+                    }
+                });
+            } else {
+                AddButtonViewHolder addButtonHolder = (AddButtonViewHolder) holder;
+                addButtonHolder.addButton.setOnClickListener(v -> {
+                    int insertPosition = memos.size();
+                    memos.add("");
+                    notifyItemInserted(insertPosition);
+                    rvMemos.scrollToPosition(insertPosition);
+                });
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return memos.size() + 1;
+        }
+
+        public void setEditMode(boolean editMode) {
+            this.isEditMode = editMode;
+            notifyDataSetChanged();
+        }
+
+        public List<String> getMemos() {
+            List<String> currentMemos = new ArrayList<>();
+            for (int i = 0; i < memos.size(); i++) {
+                MemoViewHolder holder = (MemoViewHolder) rvMemos.findViewHolderForAdapterPosition(i);
+                if (holder != null) {
+                    memos.set(i, holder.etMemoContent.getText().toString());
+                }
+            }
+
+            for (String memo : memos) {
+                if (memo != null && !memo.trim().isEmpty()) {
+                    currentMemos.add(memo);
+                }
+            }
+            return currentMemos;
+        }
+
+        class MemoViewHolder extends RecyclerView.ViewHolder {
+            EditText etMemoContent;
+            ImageView ivDeleteMemo;
+
+            public MemoViewHolder(@NonNull View itemView) {
+                super(itemView);
+                etMemoContent = itemView.findViewById(R.id.et_memo_content);
+                ivDeleteMemo = itemView.findViewById(R.id.iv_delete_memo);
+            }
+        }
+
+        class AddButtonViewHolder extends RecyclerView.ViewHolder {
+            ImageButton addButton;
+
+            public AddButtonViewHolder(@NonNull View itemView) {
+                super(itemView);
+                addButton = itemView.findViewById(R.id.circular_add_button);
+            }
+        }
     }
 }

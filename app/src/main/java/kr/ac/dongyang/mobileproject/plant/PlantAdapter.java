@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +13,8 @@ import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -121,10 +125,17 @@ public class PlantAdapter extends RecyclerView.Adapter<PlantAdapter.PlantViewHol
                 if (isChecked) {
                     String newLastWateredDate = LocalDate.now().format(formatter);
                     DatabaseConnector dbConnector = new DatabaseConnector(holder.itemView.getContext());
-                    dbConnector.updateLastWateredDate(plant.getPlantId(), newLastWateredDate);
-
-                    plant.setLastWateredDate(newLastWateredDate);
-                    notifyItemChanged(holder.getAdapterPosition());
+                    dbConnector.updateLastWateredDate(plant.getPlantId(), newLastWateredDate, success -> {
+                        if (success) {
+                            new Handler(Looper.getMainLooper()).post(() -> {
+                                plant.setLastWateredDate(newLastWateredDate);
+                                notifyItemChanged(holder.getAdapterPosition());
+                            });
+                        } else {
+                            new Handler(Looper.getMainLooper()).post(() ->
+                                    Toast.makeText(holder.itemView.getContext(), "물 주기 정보 업데이트에 실패했습니다.", Toast.LENGTH_SHORT).show());
+                        }
+                    });
                 }
             });
         }

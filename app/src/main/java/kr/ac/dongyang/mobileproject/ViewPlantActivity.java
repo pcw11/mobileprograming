@@ -12,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.NumberPicker;
 import android.widget.TextView;
@@ -74,10 +75,7 @@ public class ViewPlantActivity extends AppCompatActivity {
         loadPlantDetails();
 
         ivWaterEdit.setOnClickListener(v -> showWateringCycleDialog());
-        ivMemoAdd.setOnClickListener(v -> {
-            memoList.add("");
-            memoAdapter.notifyItemInserted(memoList.size() - 1);
-        });
+        ivMemoAdd.setVisibility(View.GONE); // The add button is now in the RecyclerView
         ivMemoEdit.setOnClickListener(v -> toggleMemoEditMode());
         btnSave.setOnClickListener(v -> updatePlantData());
         ivSearchIcon.setOnClickListener(v -> {
@@ -121,9 +119,6 @@ public class ViewPlantActivity extends AppCompatActivity {
                             memoList.clear();
                             if (memosConcat != null && !memosConcat.isEmpty()) {
                                 memoList.addAll(Arrays.asList(memosConcat.split("\n")));
-                            }
-                            if (memoList.isEmpty()) {
-                                memoList.add(""); // Add an empty memo if there are none
                             }
                             memoAdapter.notifyDataSetChanged();
                         });
@@ -224,7 +219,10 @@ public class ViewPlantActivity extends AppCompatActivity {
     }
 
     // Adapter for the memo RecyclerView
-    class MemoAdapter extends RecyclerView.Adapter<MemoAdapter.MemoViewHolder> {
+    class MemoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+        private static final int VIEW_TYPE_MEMO = 0;
+        private static final int VIEW_TYPE_ADD = 1;
 
         private List<String> memos;
         private boolean isEditMode = false;
@@ -233,52 +231,80 @@ public class ViewPlantActivity extends AppCompatActivity {
             this.memos = memos;
         }
 
+        @Override
+        public int getItemViewType(int position) {
+            if (position == memos.size()) {
+                return VIEW_TYPE_ADD;
+            } else {
+                return VIEW_TYPE_MEMO;
+            }
+        }
+
         @NonNull
         @Override
-        public MemoViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_memo, parent, false);
-            return new MemoViewHolder(view);
+        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+            if (viewType == VIEW_TYPE_MEMO) {
+                View view = inflater.inflate(R.layout.item_memo, parent, false);
+                return new MemoViewHolder(view);
+            } else { // VIEW_TYPE_ADD
+                View view = inflater.inflate(R.layout.add_button, parent, false);
+                return new AddButtonViewHolder(view);
+            }
         }
 
         @Override
-        public void onBindViewHolder(@NonNull MemoViewHolder holder, int position) {
-            String memoText = memos.get(position);
-            holder.etMemoContent.setText(memoText);
-            holder.ivDeleteMemo.setVisibility(isEditMode ? View.VISIBLE : View.GONE);
+        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+            if (holder.getItemViewType() == VIEW_TYPE_MEMO) {
+                MemoViewHolder memoHolder = (MemoViewHolder) holder;
+                String memoText = memos.get(position);
+                memoHolder.etMemoContent.setText(memoText);
+                memoHolder.ivDeleteMemo.setVisibility(isEditMode ? View.VISIBLE : View.GONE);
 
-            holder.ivDeleteMemo.setOnClickListener(v -> {
-                int currentPosition = holder.getAdapterPosition();
-                if (currentPosition != RecyclerView.NO_POSITION) {
-                    memos.remove(currentPosition);
-                    notifyItemRemoved(currentPosition);
-                }
-            });
+                memoHolder.ivDeleteMemo.setOnClickListener(v -> {
+                    int currentPosition = memoHolder.getAdapterPosition();
+                    if (currentPosition != RecyclerView.NO_POSITION) {
+                        memos.remove(currentPosition);
+                        notifyItemRemoved(currentPosition);
+                    }
+                });
+            } else {
+                AddButtonViewHolder addButtonHolder = (AddButtonViewHolder) holder;
+                addButtonHolder.addButton.setOnClickListener(v -> {
+                    int insertPosition = memos.size();
+                    memos.add("");
+                    notifyItemInserted(insertPosition);
+                    rvMemos.scrollToPosition(insertPosition);
+                });
+            }
         }
 
         @Override
         public int getItemCount() {
-            return memos.size();
+            return memos.size() + 1;
         }
 
         public void setEditMode(boolean editMode) {
             this.isEditMode = editMode;
-            notifyDataSetChanged(); // Redraw all items to show/hide delete button
+            notifyDataSetChanged();
         }
 
         public List<String> getMemos() {
-             List<String> currentMemos = new ArrayList<>();
-             for (int i = 0; i < getItemCount(); i++) {
+            List<String> currentMemos = new ArrayList<>();
+            for (int i = 0; i < memos.size(); i++) {
                 MemoViewHolder holder = (MemoViewHolder) rvMemos.findViewHolderForAdapterPosition(i);
                 if (holder != null) {
-                    String memoText = holder.etMemoContent.getText().toString();
-                     if (!memoText.trim().isEmpty()) {
-                        currentMemos.add(memoText);
-                    }
+                    memos.set(i, holder.etMemoContent.getText().toString());
+                }
+            }
+
+            for (String memo : memos) {
+                if (memo != null && !memo.trim().isEmpty()) {
+                    currentMemos.add(memo);
                 }
             }
             return currentMemos;
         }
-
 
         class MemoViewHolder extends RecyclerView.ViewHolder {
             EditText etMemoContent;
@@ -288,6 +314,15 @@ public class ViewPlantActivity extends AppCompatActivity {
                 super(itemView);
                 etMemoContent = itemView.findViewById(R.id.et_memo_content);
                 ivDeleteMemo = itemView.findViewById(R.id.iv_delete_memo);
+            }
+        }
+
+        class AddButtonViewHolder extends RecyclerView.ViewHolder {
+            ImageButton addButton;
+
+            public AddButtonViewHolder(@NonNull View itemView) {
+                super(itemView);
+                addButton = itemView.findViewById(R.id.circular_add_button);
             }
         }
     }

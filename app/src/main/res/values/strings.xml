@@ -35,4 +35,5 @@
     <!-- findpw.xml -->
     <string name="findpw_title">비밀번호 찾기</string>
     <string name="findpw_change_button_text">변경하기</string>
+    <string name="add_memo">Add Memo</string>
 </resources>

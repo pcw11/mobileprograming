@@ -252,7 +252,7 @@ public class ViewPlantActivity extends AppCompatActivity {
                 }
 
                 // 사진 로드
-                String photoSql = "SELECT image_url FROM plant_images WHERE plant_id = ?";
+                String photoSql = "SELECT image_url FROM plant_images WHERE plant_id = ? ORDER BY image_id DESC";
                 try (PreparedStatement pstmt = conn.prepareStatement(photoSql)) {
                     pstmt.setLong(1, plantId);
                     ResultSet rs = pstmt.executeQuery();
@@ -389,10 +389,11 @@ public class ViewPlantActivity extends AppCompatActivity {
                     int affectedRows = pstmt.executeUpdate();
 
                     if (affectedRows > 0) {
+                        updateMainImageUrl(imageUrl); // Main image URL 업데이트
                         new Handler(Looper.getMainLooper()).post(() -> {
                             Toast.makeText(ViewPlantActivity.this, "사진이 추가되었습니다.", Toast.LENGTH_SHORT).show();
-                            photoList.add(imageUrl);
-                            photoAdapter.notifyItemInserted(photoList.size() - 1);
+                            photoList.add(0, imageUrl);
+                            photoAdapter.notifyItemInserted(0);
                         });
                     } else {
                         new Handler(Looper.getMainLooper()).post(() -> {
@@ -571,6 +572,7 @@ public class ViewPlantActivity extends AppCompatActivity {
                         new Handler(Looper.getMainLooper()).post(() -> {
                             photoList.remove(position);
                             photoAdapter.notifyItemRemoved(position);
+                            updateMainImageUrlAfterDeletion();
                             Toast.makeText(ViewPlantActivity.this, "사진이 삭제되었습니다.", Toast.LENGTH_SHORT).show();
                         });
                     } else {
@@ -586,6 +588,26 @@ public class ViewPlantActivity extends AppCompatActivity {
                 });
             }
         }).start();
+    }
+
+    private void updateMainImageUrl(String imageUrl) {
+        new Thread(() -> {
+            try (Connection conn = new DatabaseConnector(this).getConnection()) {
+                String sql = "UPDATE plants SET main_image_url = ? WHERE plant_id = ?";
+                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    pstmt.setString(1, imageUrl);
+                    pstmt.setLong(2, plantId);
+                    pstmt.executeUpdate();
+                }
+            } catch (Exception e) {
+                Log.e("DB_ERROR", "Main image URL 업데이트 중 오류 발생", e);
+            }
+        }).start();
+    }
+
+    private void updateMainImageUrlAfterDeletion() {
+        String newMainImageUrl = photoList.isEmpty() ? null : photoList.get(0);
+        updateMainImageUrl(newMainImageUrl);
     }
 
     class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {

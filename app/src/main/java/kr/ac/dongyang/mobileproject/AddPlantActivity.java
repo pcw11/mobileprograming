@@ -349,8 +349,8 @@ public class AddPlantActivity extends AppCompatActivity {
 
             if (selectedImageUri != null) {
                 // AddPlantActivity에서는 즉시 업로드하지 않고, Uri를 리스트에 추가
-                photoList.add(selectedImageUri.toString());
-                photoAdapter.notifyItemInserted(photoList.size() - 1);
+                photoList.add(0, selectedImageUri.toString());
+                photoAdapter.notifyItemInserted(0);
             }
         }
     }
@@ -388,7 +388,7 @@ public class AddPlantActivity extends AppCompatActivity {
                     String imageUrl = "http://" + BuildConfig.SERVER_IP + ":6006/download/" + filename;
                     imageUrls.add(imageUrl);
                     // 모든 이미지 업로드가 완료되면 DB에 저장
-                    if (finalI == photoList.size() - 1) {
+                    if (imageUrls.size() == photoList.size()) {
                         insertPlantData(species, nickname, memos, imageUrls);
                     }
                 }
@@ -398,7 +398,7 @@ public class AddPlantActivity extends AppCompatActivity {
                     showToast("이미지 업로드 실패: " + message);
                     // 실패하더라도 진행을 멈추지 않고, 업로드된 것들만 저장할 수 있음
                     // 혹은 여기서 전체 프로세스를 중단할 수도 있음
-                    if (finalI == photoList.size() - 1) {
+                    if (imageUrls.size() == photoList.size() -1) { //실패한 1개를 제외하고 모든게 업로드되었을때
                         insertPlantData(species, nickname, memos, imageUrls);
                     }
                 }

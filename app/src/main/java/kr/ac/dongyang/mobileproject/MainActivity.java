@@ -51,6 +51,7 @@ import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,7 +63,9 @@ import java.util.regex.Pattern;
 
 import kr.ac.dongyang.mobileproject.plant.Plant;
 import kr.ac.dongyang.mobileproject.plant.PlantAdapter;
-import kr.ac.dongyang.mobileproject.weather.GeoCoder;
+import kr.ac.dongyang.mobileproject.weather.WeatherApiService;
+import kr.ac.dongyang.mobileproject.weather.WeatherResponse;
+import kr.ac.dongyang.mobileproject.weather.WeatherService;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -97,6 +100,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvGreeting, tvPlantCount;
     private String currentUserId;
     private Button btnUploadTest; // 추가된 버튼
+    private List<Weather> weatherList; // 날씨 목록
 
     // Retrofit
     private ApiService apiService;
@@ -131,6 +135,7 @@ public class MainActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.rv_plant_list);
         fabAdd = findViewById(R.id.fab_add);
         plantList = new ArrayList<>();
+        weatherList = new ArrayList<>();
         weatherViewPager = findViewById(R.id.vp_weather);
         indicatorLayout = findViewById(R.id.ll_indicator);
         tvPlantCount = findViewById(R.id.tv_plant_count);
@@ -197,6 +202,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         new Handler(Looper.getMainLooper()).postDelayed(this::loadPlantData, 1000); // 1초 지연
+        loadSavedWeatherData(); // 날씨 데이터 로드
     }
 
     private void openGallery() {
@@ -424,15 +430,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupWeatherViewPager() {
-        List<Weather> weatherList = new ArrayList<>();
-        weatherList.add(new Weather(R.drawable.sunny, "서울특별시 구로구 고척동", "맑음 19°C🌡"));
-        weatherList.add(new Weather(R.drawable.cloud, "경기도 부천시 역곡동", "구름 많음 18°C☁️"));
-        weatherList.add(new Weather(R.drawable.rain, "인천광역시 미추홀구", "비 17°C🌧️"));
-
-        weatherAdapter = new WeatherAdapter(weatherList, this); // 'this'를 추가하여 Context를 전달
+        weatherAdapter = new WeatherAdapter(weatherList, this, currentUserId);
         weatherViewPager.setAdapter(weatherAdapter);
-
-        setupIndicators(weatherAdapter.getItemCount());
 
         weatherViewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
@@ -443,7 +442,124 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void loadSavedWeatherData() {
+        new Thread(() -> {
+            final List<Weather> newWeatherList = new ArrayList<>();
+            try (Connection conn = new DatabaseConnector(this).getConnection()) {
+                String sql = "SELECT sl.id, sl.region_name, sl.nx, sl.ny, wd.temperature, wd.weather_status, wd.updated_at " +
+                             "FROM saved_locations sl LEFT JOIN weather_data wd ON sl.id = wd.location_id " +
+                             "WHERE sl.user_id = ? ORDER BY sl.id ASC";
+
+                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    pstmt.setString(1, currentUserId);
+                    ResultSet rs = pstmt.executeQuery();
+                    while (rs.next()) {
+                        long locationId = rs.getLong("id");
+                        String regionName = rs.getString("region_name");
+                        double nx = rs.getDouble("nx");
+                        double ny = rs.getDouble("ny");
+                        String weatherStatus = rs.getString("weather_status");
+                        double temperature = rs.getDouble("temperature");
+                        Timestamp updatedAt = rs.getTimestamp("updated_at");
+
+                        boolean needsUpdate = (updatedAt == null || (System.currentTimeMillis() - updatedAt.getTime()) > 30 * 60 * 1000);
+
+                        if (needsUpdate) {
+                            newWeatherList.add(new Weather(R.drawable.cloud, regionName, "갱신 중..."));
+                            updateWeatherForLocation(locationId, regionName, ny, nx);
+                        } else {
+                            String temperatureText = String.format(Locale.getDefault(), "%.1f°C %s", temperature, weatherStatus);
+                            int weatherIcon = getWeatherIcon(weatherStatus);
+                            newWeatherList.add(new Weather(weatherIcon, regionName, temperatureText));
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                Log.e("DB_WEATHER_LOAD", "저장된 날씨 정보 로딩 중 오류", e);
+            }
+
+            runOnUiThread(() -> {
+                weatherList.clear();
+                if (newWeatherList.isEmpty()) {
+                    weatherList.add(new Weather(R.drawable.edit, "지역을 검색하여 추가하세요", ""));
+                } else {
+                    weatherList.addAll(newWeatherList);
+                }
+                weatherAdapter.notifyDataSetChanged();
+                setupIndicators(weatherList.size());
+            });
+        }).start();
+    }
+
+    private void updateWeatherForLocation(final long locationId, final String regionName, final double lat, final double lon) {
+        WeatherApiService weatherService = WeatherService.getWeatherApiService();
+        String apiKey = BuildConfig.WEATHER_API_KEY;
+
+        weatherService.getWeatherData(lat, lon, apiKey, "metric", "kr").enqueue(new Callback<WeatherResponse>() {
+            @Override
+            public void onResponse(Call<WeatherResponse> call, Response<WeatherResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    WeatherResponse data = response.body();
+                    String description = data.getWeather().get(0).getDescription();
+                    double temp = data.getMain().getTemp();
+
+                    saveWeatherDataToDatabase(locationId, temp, description);
+
+                    runOnUiThread(() -> {
+                        for (Weather item : weatherList) {
+                            if (item.getLocation().equals(regionName)) {
+                                item.setTemperature(String.format(Locale.getDefault(), "%.1f°C %s", temp, description));
+                                item.setIcon(getWeatherIcon(description));
+                                weatherAdapter.notifyDataSetChanged();
+                                break;
+                            }
+                        }
+                    });
+                } else {
+                    Log.e("WEATHER_UPDATE", "날씨 정보 갱신 실패 for " + regionName);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<WeatherResponse> call, Throwable t) {
+                Log.e("WEATHER_UPDATE", "날씨 API 호출 실패 for " + regionName, t);
+            }
+        });
+    }
+
+    private void saveWeatherDataToDatabase(long locationId, double temperature, String weatherStatus) {
+        new Thread(() -> {
+            try (Connection conn = new DatabaseConnector(MainActivity.this).getConnection()) {
+                String sql = "INSERT INTO weather_data (location_id, temperature, weather_status) VALUES (?, ?, ?) " +
+                             "ON DUPLICATE KEY UPDATE temperature = VALUES(temperature), weather_status = VALUES(weather_status), updated_at = CURRENT_TIMESTAMP";
+                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    pstmt.setLong(1, locationId);
+                    pstmt.setDouble(2, temperature);
+                    pstmt.setString(3, weatherStatus);
+                    pstmt.executeUpdate();
+                    Log.i("DB_WEATHER_UPDATE", "날씨 정보 DB 갱신 성공, location_id: " + locationId);
+                }
+            } catch (Exception e) {
+                Log.e("DB_WEATHER_UPDATE", "날씨 정보 DB 갱신 오류", e);
+            }
+        }).start();
+    }
+
+    private int getWeatherIcon(String description) {
+        if (description == null) return R.drawable.cloud;
+        if (description.contains("맑음")) {
+            return R.drawable.sunny;
+        } else if (description.contains("구름") || description.contains("흐림")) {
+            return R.drawable.cloud;
+        } else if (description.contains("비")) {
+            return R.drawable.rain;
+        } else {
+            return R.drawable.sunny; // Default icon
+        }
+    }
+
     private void setupIndicators(int count) {
+        if (count == 0) return;
         indicators = new ImageView[count];
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -461,6 +577,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateIndicators(int position) {
+        if (indicators == null || indicators.length == 0) return;
         for (int i = 0; i < indicators.length; i++) {
             indicators[i].setImageDrawable(ContextCompat.getDrawable(this,
                     i == position ? R.drawable.tab_indicator_selected : R.drawable.tab_indicator_default));

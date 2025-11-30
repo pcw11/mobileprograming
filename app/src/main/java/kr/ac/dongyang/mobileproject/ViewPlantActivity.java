@@ -473,32 +473,56 @@ public class ViewPlantActivity extends AppCompatActivity {
             }
         }).start();
     }
-    
-    class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.PhotoViewHolder> {
+
+    class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+        private static final int VIEW_TYPE_PHOTO = 0;
+        private static final int VIEW_TYPE_ADD = 1;
+
         private List<String> photos;
 
         public PhotoAdapter(List<String> photos) {
             this.photos = photos;
         }
 
+        @Override
+        public int getItemViewType(int position) {
+            if (position == photos.size()) {
+                return VIEW_TYPE_ADD;
+            } else {
+                return VIEW_TYPE_PHOTO;
+            }
+        }
+
         @NonNull
         @Override
-        public PhotoViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_photo, parent, false);
-            return new PhotoViewHolder(view);
+        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+            if (viewType == VIEW_TYPE_PHOTO) {
+                View view = inflater.inflate(R.layout.item_photo, parent, false);
+                return new PhotoViewHolder(view);
+            } else { // VIEW_TYPE_ADD
+                View view = inflater.inflate(R.layout.add_button, parent, false);
+                return new AddButtonViewHolder(view);
+            }
         }
 
         @Override
-        public void onBindViewHolder(@NonNull PhotoViewHolder holder, int position) {
-            String imageUrl = photos.get(position);
-            Glide.with(holder.imageView.getContext())
-                 .load(imageUrl)
-                 .into(holder.imageView);
+        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+            if (holder.getItemViewType() == VIEW_TYPE_PHOTO) {
+                PhotoViewHolder photoHolder = (PhotoViewHolder) holder;
+                String imageUrl = photos.get(position);
+                Glide.with(photoHolder.imageView.getContext())
+                     .load(imageUrl)
+                     .into(photoHolder.imageView);
+            } else {
+                AddButtonViewHolder addButtonHolder = (AddButtonViewHolder) holder;
+                addButtonHolder.addButton.setOnClickListener(v -> showImageSourceDialog());
+            }
         }
 
         @Override
         public int getItemCount() {
-            return photos.size();
+            return photos.size() + 1;
         }
 
         class PhotoViewHolder extends RecyclerView.ViewHolder {
@@ -507,6 +531,15 @@ public class ViewPlantActivity extends AppCompatActivity {
             public PhotoViewHolder(@NonNull View itemView) {
                 super(itemView);
                 imageView = itemView.findViewById(R.id.iv_photo);
+            }
+        }
+
+        class AddButtonViewHolder extends RecyclerView.ViewHolder {
+            ImageButton addButton;
+
+            public AddButtonViewHolder(@NonNull View itemView) {
+                super(itemView);
+                addButton = itemView.findViewById(R.id.circular_add_button);
             }
         }
     }

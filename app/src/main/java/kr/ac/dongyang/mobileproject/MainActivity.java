@@ -237,7 +237,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (!plantsToWater.isEmpty()) {
-            ivNotification.setImageResource(android.R.drawable.ic_dialog_info); // bellpoint 아이콘으로 교체 필요
+            ivNotification.setImageResource(R.drawable.bellpoint); // bellpoint 아이콘으로 교체 필요
             ivNotification.setOnClickListener(v -> showWateringListDialog(plantsToWater));
         } else {
             ivNotification.setImageResource(R.drawable.bell);

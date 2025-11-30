@@ -2,6 +2,7 @@ package kr.ac.dongyang.mobileproject;
 
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -29,10 +30,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.navigation.NavigationView;
 
 import java.io.File;
 import java.io.IOException;
@@ -54,6 +58,9 @@ public class AddPlantActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_CODE = 100;
     private static final String KEY_PHOTO_URI = "key_photo_uri";
 
+    private DrawerLayout drawerLayout;
+    private NavigationView navigationView;
+    private ImageView ivMenu;
     private TextView tvGreeting;
     private EditText etPlantSpecies, etPlantNickname;
     private ImageView ivWaterEdit, ivMemoEdit, ivPhotoAdd;
@@ -83,6 +90,9 @@ public class AddPlantActivity extends AppCompatActivity {
         }
 
         // 뷰 초기화
+        drawerLayout = findViewById(R.id.drawer_layout);
+        navigationView = findViewById(R.id.nav_view);
+        ivMenu = findViewById(R.id.iv_menu);
         tvGreeting = findViewById(R.id.tv_greeting_add);
         etPlantSpecies = findViewById(R.id.et_plant_species);
         etPlantNickname = findViewById(R.id.et_plant_nickname);
@@ -107,6 +117,18 @@ public class AddPlantActivity extends AppCompatActivity {
         setupRecyclerViews();
         updateDateViews();
 
+        ivMenu.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.END));
+        navigationView.setNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_logout) {
+                logout();
+            } else {
+                Toast.makeText(AddPlantActivity.this, "준비 중인 기능입니다.", Toast.LENGTH_SHORT).show();
+            }
+            drawerLayout.closeDrawer(GravityCompat.END);
+            return true;
+        });
+
         // 물 주기 수정 아이콘 클릭 리스너
         ivWaterEdit.setOnClickListener(v -> showWateringCycleDialog());
 
@@ -120,6 +142,19 @@ public class AddPlantActivity extends AppCompatActivity {
 
         // 초기 물 주기 텍스트 설정
         tvWaterSubtitle.setText("물 주기는 " + wateringCycle + "일 입니다.");
+    }
+
+    private void logout() {
+        SharedPreferences sharedPreferences = getSharedPreferences("AutoLoginPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.clear();
+        editor.apply();
+
+        Toast.makeText(this, "로그아웃되었습니다.", Toast.LENGTH_SHORT).show();
+
+        Intent intent = new Intent(AddPlantActivity.this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
     }
 
     @Override

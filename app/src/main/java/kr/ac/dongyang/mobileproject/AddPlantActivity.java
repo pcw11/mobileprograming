@@ -63,7 +63,7 @@ public class AddPlantActivity extends AppCompatActivity {
     private ImageView ivMenu;
     private TextView tvGreeting;
     private EditText etPlantSpecies, etPlantNickname;
-    private ImageView ivWaterEdit, ivMemoEdit, ivPhotoAdd;
+    private ImageView ivWaterEdit, ivMemoAdd, ivMemoEdit, ivPhotoAdd;
     private TextView tvWaterSubtitle;
     private Button btnSave;
     private RecyclerView rvMemos, rvPhotos;
@@ -99,6 +99,7 @@ public class AddPlantActivity extends AppCompatActivity {
         ivWaterEdit = findViewById(R.id.iv_water_edit);
         tvWaterSubtitle = findViewById(R.id.tv_water_subtitle);
         ivPhotoAdd = findViewById(R.id.iv_photo_add);
+        ivMemoAdd = findViewById(R.id.iv_memo_add);
         ivMemoEdit = findViewById(R.id.iv_memo_edit);
         rvMemos = findViewById(R.id.rv_memos);
         rvPhotos = findViewById(R.id.rv_photos);
@@ -134,7 +135,13 @@ public class AddPlantActivity extends AppCompatActivity {
 
         // 사진 추가/수정 버튼 리스너
         ivPhotoAdd.setOnClickListener(v -> showImageSourceDialog());
-        // 메모 수정 버튼 클릭 리스너
+        // 메모 추가/수정 버튼 리스너
+        ivMemoAdd.setOnClickListener(v -> {
+            int insertPosition = memoList.size();
+            memoList.add("");
+            memoAdapter.notifyItemInserted(insertPosition);
+            rvMemos.scrollToPosition(insertPosition);
+        });
         ivMemoEdit.setOnClickListener(v -> toggleMemoEditMode());
 
         // 저장 버튼 클릭 리스너

@@ -179,12 +179,14 @@ public class MainActivity extends AppCompatActivity {
         // 6. 날씨 뷰페이저 설정
         setupWeatherViewPager();
 
-        // 7. DB에서 식물 목록 불러오기
-        loadPlantData();
-
         // 8. 알림 권한 요청
         requestNotificationPermission();
         requestStoragePermission();
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        new Handler(Looper.getMainLooper()).postDelayed(this::loadPlantData, 1000); // 1초 지연
     }
 
     private void openGallery() {
@@ -280,7 +282,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if ((requestCode == ADD_PLANT_REQUEST || requestCode == VIEW_PLANT_REQUEST) && resultCode == RESULT_OK) {
-            loadPlantData();
+            // onResume에서 처리하므로 여기서는 제거
         } else if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null) {
             Uri imageUri = data.getData();
             uploadImage(imageUri);

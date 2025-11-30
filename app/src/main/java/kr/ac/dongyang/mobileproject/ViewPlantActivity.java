@@ -84,6 +84,7 @@ public class ViewPlantActivity extends AppCompatActivity {
     private String originalSpecies, originalNickname;
     private int originalWateringCycle;
     private List<String> originalMemoList = new ArrayList<>();
+    private boolean isDataChanged = false;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -137,7 +138,12 @@ public class ViewPlantActivity extends AppCompatActivity {
         });
 
         ivWaterEdit.setOnClickListener(v -> showWateringCycleDialog());
-        ivMemoAdd.setVisibility(View.GONE);
+        ivMemoAdd.setOnClickListener(v -> {
+            int insertPosition = memoList.size();
+            memoList.add("");
+            memoAdapter.notifyItemInserted(insertPosition);
+            rvMemos.scrollToPosition(insertPosition);
+        });
         ivMemoEdit.setOnClickListener(v -> toggleMemoEditMode());
         ivSearchIcon.setOnClickListener(v -> {
             String species = etPlantSpecies.getText().toString();
@@ -160,12 +166,12 @@ public class ViewPlantActivity extends AppCompatActivity {
         String currentNickname = etPlantNickname.getText().toString();
         List<String> currentMemos = memoAdapter.getMemos();
 
-        boolean hasChanges = !Objects.equals(currentSpecies, originalSpecies) ||
-                             !Objects.equals(currentNickname, originalNickname) ||
-                             wateringCycle != originalWateringCycle ||
-                             !currentMemos.equals(originalMemoList);
+        isDataChanged = !Objects.equals(currentSpecies, originalSpecies) ||
+                !Objects.equals(currentNickname, originalNickname) ||
+                wateringCycle != originalWateringCycle ||
+                !currentMemos.equals(originalMemoList);
 
-        if (hasChanges) {
+        if (isDataChanged) {
             updatePlantData();
         }
     }
@@ -384,7 +390,6 @@ public class ViewPlantActivity extends AppCompatActivity {
                             Toast.makeText(ViewPlantActivity.this, "사진이 추가되었습니다.", Toast.LENGTH_SHORT).show();
                             photoList.add(imageUrl);
                             photoAdapter.notifyItemInserted(photoList.size() - 1);
-                            setResult(RESULT_OK); // MainActivity에 변경사항 알림
                         });
                     } else {
                         new Handler(Looper.getMainLooper()).post(() -> {
@@ -534,8 +539,7 @@ public class ViewPlantActivity extends AppCompatActivity {
                 }
 
                 new Handler(Looper.getMainLooper()).post(() -> {
-                    Toast.makeText(this, "식물 정보가 수정되었습니다.", Toast.LENGTH_SHORT).show();
-                    setResult(RESULT_OK);
+                    Toast.makeText(this, "식물 정보가 자동 저장되었습니다.", Toast.LENGTH_SHORT).show();
                 });
 
             } catch (Exception e) {

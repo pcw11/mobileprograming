@@ -106,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Retrofit 초기화
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://192.168.219.109:6006/") // Flask 서버 주소
+                .baseUrl("http://" + BuildConfig.SERVER_IP + ":6006/") // Flask 서버 주소
                 .addConverterFactory(ScalarsConverterFactory.create())
                 .client(new OkHttpClient.Builder().build())
                 .build();
@@ -290,9 +290,11 @@ public class MainActivity extends AppCompatActivity {
     private void loadPlantData() {
         new Thread(() -> {
             try (Connection conn = new DatabaseConnector(this).getConnection()) {
-                String sql = "SELECT p.plant_id, p.nickname, p.species, p.main_image_url, p.watering_cycle, p.last_watered_date, GROUP_CONCAT(pm.content SEPARATOR '\n') as memos " +
-                        "FROM plants p LEFT JOIN plant_memos pm ON p.plant_id = pm.plant_id " +
-                        "WHERE p.user_id = ? GROUP BY p.plant_id";
+                String sql = "SELECT p.plant_id, p.nickname, p.species, p.main_image_url, p.watering_cycle, p.last_watered_date, " +
+                        "(SELECT GROUP_CONCAT(pm.content SEPARATOR '\n') FROM plant_memos pm WHERE pm.plant_id = p.plant_id) as memos, " +
+                        "IFNULL(p.main_image_url, (SELECT pi.image_url FROM plant_images pi WHERE pi.plant_id = p.plant_id ORDER BY pi.image_id DESC LIMIT 1)) as final_image_url " +
+                        "FROM plants p WHERE p.user_id = ?";
+
                 try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                     pstmt.setString(1, currentUserId);
                     ResultSet rs = pstmt.executeQuery();
@@ -302,13 +304,19 @@ public class MainActivity extends AppCompatActivity {
                         long plantId = rs.getLong("plant_id");
                         String nickname = rs.getString("nickname");
                         String species = rs.getString("species");
-                        String imageUrl = rs.getString("main_image_url");
+                        String imageUrl = rs.getString("final_image_url");
                         int waterCycle = rs.getInt("watering_cycle");
                         String lastWateredDate = rs.getString("last_watered_date");
                         String memosConcat = rs.getString("memos");
                         List<String> memos = new ArrayList<>();
                         if (memosConcat != null) {
                             memos.addAll(Arrays.asList(memosConcat.split("\\n")));
+                        }
+
+                        // main_image_url이 null이었는데, 대체 이미지를 찾은 경우 DB 업데이트
+                        String originalMainUrl = rs.getString("main_image_url");
+                        if (originalMainUrl == null && imageUrl != null) {
+                            updateMainImageUrl(plantId, imageUrl);
                         }
 
                         plantList.add(new Plant(plantId, species, nickname, imageUrl, memos, lastWateredDate, waterCycle));
@@ -331,6 +339,22 @@ public class MainActivity extends AppCompatActivity {
             }
         }).start();
     }
+
+    private void updateMainImageUrl(long plantId, String imageUrl) {
+        new Thread(() -> {
+            try (Connection conn = new DatabaseConnector(MainActivity.this).getConnection()) {
+                String sql = "UPDATE plants SET main_image_url = ? WHERE plant_id = ?";
+                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    pstmt.setString(1, imageUrl);
+                    pstmt.setLong(2, plantId);
+                    pstmt.executeUpdate();
+                }
+            } catch (Exception e) {
+                Log.e("DB_UPDATE_ERROR", "Main image URL 업데이트 중 오류 발생", e);
+            }
+        }).start();
+    }
+
 
     private void checkWateringNeeded() {
         List<String> plantsToWater = new ArrayList<>();

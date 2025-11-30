@@ -29,6 +29,7 @@ android {
         buildConfigField("String", "DB_NAME", "\"${localProperties.getProperty("db.name")}\"")
         buildConfigField("String", "DB_USER", "\"${localProperties.getProperty("db.user")}\"")
         buildConfigField("String", "DB_PASSWORD", "\"${localProperties.getProperty("db.password")}\"")
+        buildConfigField("String", "SERVER_IP", "\"${localProperties.getProperty("server.ip")}\"")
     }
 
     buildTypes {

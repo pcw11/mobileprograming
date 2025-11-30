@@ -6,10 +6,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.MediaStore;
+import android.provider.OpenableColumns;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.Gravity;
@@ -40,6 +44,9 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -54,12 +61,25 @@ import java.util.regex.Pattern;
 
 import kr.ac.dongyang.mobileproject.plant.Plant;
 import kr.ac.dongyang.mobileproject.plant.PlantAdapter;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.scalars.ScalarsConverterFactory;
+import retrofit2.http.Multipart;
+import retrofit2.http.POST;
+import retrofit2.http.Part;
 
 public class MainActivity extends AppCompatActivity {
 
     public static final int ADD_PLANT_REQUEST = 1;
     public static final int VIEW_PLANT_REQUEST = 2;
     private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 101;
+    private static final int PICK_IMAGE_REQUEST = 3;
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
@@ -74,11 +94,23 @@ public class MainActivity extends AppCompatActivity {
     private ImageView[] indicators;
     private TextView tvGreeting, tvPlantCount;
     private String currentUserId;
+    private Button btnUploadTest; // 추가된 버튼
+
+    // Retrofit
+    private ApiService apiService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Retrofit 초기화
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("http://192.168.219.109:6006/") // Flask 서버 주소
+                .addConverterFactory(ScalarsConverterFactory.create())
+                .client(new OkHttpClient.Builder().build())
+                .build();
+        apiService = retrofit.create(ApiService.class);
 
         // 1. 초기화
         drawerLayout = findViewById(R.id.drawer_layout);
@@ -92,6 +124,7 @@ public class MainActivity extends AppCompatActivity {
         weatherViewPager = findViewById(R.id.vp_weather);
         indicatorLayout = findViewById(R.id.ll_indicator);
         tvPlantCount = findViewById(R.id.tv_plant_count);
+        btnUploadTest = findViewById(R.id.btn_upload_test); // 버튼 초기화
 
         // 환영 메시지 설정
         Intent intent = getIntent();
@@ -140,6 +173,9 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(addPlantIntent, ADD_PLANT_REQUEST);
         });
 
+        // 업로드 테스트 버튼 클릭 리스너
+        btnUploadTest.setOnClickListener(v -> openGallery());
+
         // 6. 날씨 뷰페이저 설정
         setupWeatherViewPager();
 
@@ -148,7 +184,79 @@ public class MainActivity extends AppCompatActivity {
 
         // 8. 알림 권한 요청
         requestNotificationPermission();
+        requestStoragePermission();
     }
+
+    private void openGallery() {
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setType("image/*");
+        startActivityForResult(intent, PICK_IMAGE_REQUEST);
+    }
+
+    private void uploadImage(Uri imageUri) {
+        File tempFile = createTempFileFromUri(imageUri);
+        if (tempFile == null) {
+            Toast.makeText(this, "이미지 파일을 준비하는데 실패했습니다.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        RequestBody requestFile = RequestBody.create(MediaType.parse(getContentResolver().getType(imageUri)), tempFile);
+        MultipartBody.Part body = MultipartBody.Part.createFormData("file", tempFile.getName(), requestFile);
+
+        Call<String> call = apiService.uploadImage(body);
+        call.enqueue(new Callback<String>() {
+            @Override
+            public void onResponse(Call<String> call, Response<String> response) {
+                tempFile.delete(); // 임시 파일 삭제
+                if (response.isSuccessful()) {
+                    String imageUrl = response.body();
+                    Toast.makeText(MainActivity.this, "Upload successful: " + imageUrl, Toast.LENGTH_LONG).show();
+                    // TODO: DB에 imageUrl 저장
+                } else {
+                    Toast.makeText(MainActivity.this, "Upload failed: " + response.code() + " " + response.message(), Toast.LENGTH_SHORT).show();
+                    try {
+                        Log.e("UPLOAD_ERROR", "Error Body: " + response.errorBody().string());
+                    } catch(Exception e) {
+                        Log.e("UPLOAD_ERROR", "Error reading error body", e);
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<String> call, Throwable t) {
+                tempFile.delete(); // 임시 파일 삭제
+                Log.e("UPLOAD_FAILURE", "Upload error: " + t.getMessage(), t);
+                Toast.makeText(MainActivity.this, "Upload error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private File createTempFileFromUri(Uri uri) {
+        Cursor cursor = getContentResolver().query(uri, null, null, null, null);
+        if (cursor == null) return null;
+
+        int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+        cursor.moveToFirst();
+        String fileName = cursor.getString(nameIndex);
+        cursor.close();
+
+        File tempFile = null;
+        try (InputStream inputStream = getContentResolver().openInputStream(uri)) {
+            tempFile = new File(getCacheDir(), fileName);
+            try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+            }
+        } catch (Exception e) {
+            Log.e("FileCreation", "Error creating temp file", e);
+            return null;
+        }
+        return tempFile;
+    }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -159,6 +267,12 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(this, "알림 권한이 거부되었습니다. 설정에서 권한을 허용해주세요.", Toast.LENGTH_SHORT).show();
             }
+        } else if (requestCode == 102) { // 저장소 권한
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "저장소 접근 권한이 허용되었습니다.", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "저장소 접근 권한이 거부되었습니다.", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -167,6 +281,9 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if ((requestCode == ADD_PLANT_REQUEST || requestCode == VIEW_PLANT_REQUEST) && resultCode == RESULT_OK) {
             loadPlantData();
+        } else if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null) {
+            Uri imageUri = data.getData();
+            uploadImage(imageUri);
         }
     }
 
@@ -616,5 +733,19 @@ public class MainActivity extends AppCompatActivity {
                         NOTIFICATION_PERMISSION_REQUEST_CODE);
             }
         }
+    }
+
+    private void requestStoragePermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 102);
+            }
+        }
+    }
+
+    public interface ApiService {
+        @Multipart
+        @POST("/upload")
+        Call<String> uploadImage(@Part MultipartBody.Part image);
     }
 }

@@ -109,6 +109,16 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
+        <Button
+            android:id="@+id/btn_upload_test"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Upload Test"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_margin="16dp"/>
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- Drawer Content -->

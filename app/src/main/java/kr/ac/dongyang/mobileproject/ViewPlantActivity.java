@@ -9,17 +9,20 @@ import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.NumberPicker;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -34,12 +37,14 @@ public class ViewPlantActivity extends AppCompatActivity {
     private ImageView ivWaterEdit, ivMemoAdd, ivSearchIcon, ivMemoEdit;
     private TextView tvGreeting, tvWaterSubtitle;
     private Button btnSave;
-    private LinearLayout llMemoContainer;
+    private RecyclerView rvMemos;
+    private MemoAdapter memoAdapter;
+    private List<String> memoList = new ArrayList<>();
 
     private int wateringCycle = 7;
     private long plantId;
     private boolean isEditMode = false;
-    // TODO 식물 뷰어 날짜 연동 가능하도록 & 사진 추가
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,7 +56,7 @@ public class ViewPlantActivity extends AppCompatActivity {
         tvWaterSubtitle = findViewById(R.id.tv_water_subtitle);
         ivMemoAdd = findViewById(R.id.iv_memo_add);
         ivMemoEdit = findViewById(R.id.iv_memo_edit);
-        llMemoContainer = findViewById(R.id.ll_memo_container);
+        rvMemos = findViewById(R.id.rv_memos);
         btnSave = findViewById(R.id.btn_save_plant);
         ivSearchIcon = findViewById(R.id.iv_search_icon);
         tvGreeting = findViewById(R.id.tv_greeting_add);
@@ -65,10 +70,14 @@ public class ViewPlantActivity extends AppCompatActivity {
             return;
         }
 
+        setupRecyclerView();
         loadPlantDetails();
 
         ivWaterEdit.setOnClickListener(v -> showWateringCycleDialog());
-        ivMemoAdd.setOnClickListener(v -> addMemoView(""));
+        ivMemoAdd.setOnClickListener(v -> {
+            memoList.add("");
+            memoAdapter.notifyItemInserted(memoList.size() - 1);
+        });
         ivMemoEdit.setOnClickListener(v -> toggleMemoEditMode());
         btnSave.setOnClickListener(v -> updatePlantData());
         ivSearchIcon.setOnClickListener(v -> {
@@ -78,6 +87,12 @@ public class ViewPlantActivity extends AppCompatActivity {
                 startActivity(browserIntent);
             }
         });
+    }
+
+    private void setupRecyclerView() {
+        rvMemos.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        memoAdapter = new MemoAdapter(memoList);
+        rvMemos.setAdapter(memoAdapter);
     }
 
     private void loadPlantDetails() {
@@ -96,24 +111,21 @@ public class ViewPlantActivity extends AppCompatActivity {
                         String userId = rs.getString("user_id");
                         wateringCycle = rs.getInt("watering_cycle");
                         String memosConcat = rs.getString("memos");
-                        List<String> memos = new ArrayList<>();
-                        if (memosConcat != null) {
-                            memos.addAll(Arrays.asList(memosConcat.split("\n")));
-                        }
 
                         new Handler(Looper.getMainLooper()).post(() -> {
                             tvGreeting.setText(userId + "님 안녕하세요!");
                             etPlantSpecies.setText(species);
                             etPlantNickname.setText(nickname);
                             tvWaterSubtitle.setText("물 주기는 " + wateringCycle + "일 입니다.");
-                            llMemoContainer.removeAllViews();
-                            for (String memo : memos) {
-                                addMemoView(memo);
+
+                            memoList.clear();
+                            if (memosConcat != null && !memosConcat.isEmpty()) {
+                                memoList.addAll(Arrays.asList(memosConcat.split("\n")));
                             }
-                            // If no memos, add one empty memo view
-                            if (memos.isEmpty()){
-                                addMemoView("");
+                            if (memoList.isEmpty()) {
+                                memoList.add(""); // Add an empty memo if there are none
                             }
+                            memoAdapter.notifyDataSetChanged();
                         });
                     }
                 }
@@ -146,27 +158,9 @@ public class ViewPlantActivity extends AppCompatActivity {
         builder.create().show();
     }
 
-    private void addMemoView(String text) {
-        LayoutInflater inflater = LayoutInflater.from(this);
-        View memoView = inflater.inflate(R.layout.memo_item, llMemoContainer, false);
-        EditText etMemo = memoView.findViewById(R.id.et_memo_item);
-        etMemo.setText(text);
-
-        ImageView ivDeleteMemo = memoView.findViewById(R.id.iv_delete_memo);
-        ivDeleteMemo.setOnClickListener(v -> {
-            llMemoContainer.removeView(memoView);
-        });
-
-        llMemoContainer.addView(memoView);
-    }
-
     private void toggleMemoEditMode() {
         isEditMode = !isEditMode;
-        for (int i = 0; i < llMemoContainer.getChildCount(); i++) {
-            View memoView = llMemoContainer.getChildAt(i);
-            ImageView ivDeleteMemo = memoView.findViewById(R.id.iv_delete_memo);
-            ivDeleteMemo.setVisibility(isEditMode ? View.VISIBLE : View.GONE);
-        }
+        memoAdapter.setEditMode(isEditMode);
     }
 
     private void updatePlantData() {
@@ -178,15 +172,7 @@ public class ViewPlantActivity extends AppCompatActivity {
             return;
         }
 
-        List<String> memos = new ArrayList<>();
-        for (int i = 0; i < llMemoContainer.getChildCount(); i++) {
-            View memoView = llMemoContainer.getChildAt(i);
-            EditText etMemo = memoView.findViewById(R.id.et_memo_item);
-            String memoText = etMemo.getText().toString().trim();
-            if (!memoText.isEmpty()) {
-                memos.add(memoText);
-            }
-        }
+        List<String> memosToSave = memoAdapter.getMemos();
 
         new Thread(() -> {
             try (Connection conn = new DatabaseConnector(this).getConnection()) {
@@ -208,13 +194,15 @@ public class ViewPlantActivity extends AppCompatActivity {
                 }
 
                 // 3. Insert new memos
-                if (!memos.isEmpty()) {
+                if (!memosToSave.isEmpty()) {
                     String insertMemoSql = "INSERT INTO plant_memos (plant_id, content) VALUES (?, ?)";
                     try (PreparedStatement pstmt = conn.prepareStatement(insertMemoSql)) {
-                        for (String memo : memos) {
-                            pstmt.setLong(1, plantId);
-                            pstmt.setString(2, memo);
-                            pstmt.addBatch();
+                        for (String memo : memosToSave) {
+                             if (!memo.trim().isEmpty()) {
+                                pstmt.setLong(1, plantId);
+                                pstmt.setString(2, memo);
+                                pstmt.addBatch();
+                            }
                         }
                         pstmt.executeBatch();
                     }
@@ -233,5 +221,74 @@ public class ViewPlantActivity extends AppCompatActivity {
                 });
             }
         }).start();
+    }
+
+    // Adapter for the memo RecyclerView
+    class MemoAdapter extends RecyclerView.Adapter<MemoAdapter.MemoViewHolder> {
+
+        private List<String> memos;
+        private boolean isEditMode = false;
+
+        public MemoAdapter(List<String> memos) {
+            this.memos = memos;
+        }
+
+        @NonNull
+        @Override
+        public MemoViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_memo, parent, false);
+            return new MemoViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull MemoViewHolder holder, int position) {
+            String memoText = memos.get(position);
+            holder.etMemoContent.setText(memoText);
+            holder.ivDeleteMemo.setVisibility(isEditMode ? View.VISIBLE : View.GONE);
+
+            holder.ivDeleteMemo.setOnClickListener(v -> {
+                int currentPosition = holder.getAdapterPosition();
+                if (currentPosition != RecyclerView.NO_POSITION) {
+                    memos.remove(currentPosition);
+                    notifyItemRemoved(currentPosition);
+                }
+            });
+        }
+
+        @Override
+        public int getItemCount() {
+            return memos.size();
+        }
+
+        public void setEditMode(boolean editMode) {
+            this.isEditMode = editMode;
+            notifyDataSetChanged(); // Redraw all items to show/hide delete button
+        }
+
+        public List<String> getMemos() {
+             List<String> currentMemos = new ArrayList<>();
+             for (int i = 0; i < getItemCount(); i++) {
+                MemoViewHolder holder = (MemoViewHolder) rvMemos.findViewHolderForAdapterPosition(i);
+                if (holder != null) {
+                    String memoText = holder.etMemoContent.getText().toString();
+                     if (!memoText.trim().isEmpty()) {
+                        currentMemos.add(memoText);
+                    }
+                }
+            }
+            return currentMemos;
+        }
+
+
+        class MemoViewHolder extends RecyclerView.ViewHolder {
+            EditText etMemoContent;
+            ImageView ivDeleteMemo;
+
+            public MemoViewHolder(@NonNull View itemView) {
+                super(itemView);
+                etMemoContent = itemView.findViewById(R.id.et_memo_content);
+                ivDeleteMemo = itemView.findViewById(R.id.iv_delete_memo);
+            }
+        }
     }
 }

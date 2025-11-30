@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp">
-<!--TODO 메뉴 표기 추가 필요-->
+
         <!-- Header -->
         <TextView
             android:id="@+id/tv_greeting_add"
@@ -234,13 +234,20 @@
                     app:layout_constraintTop_toTopOf="@id/tv_memo_title"
                     app:layout_constraintBottom_toBottomOf="@id/tv_memo_title" />
 
-                <LinearLayout
-                    android:id="@+id/ll_memo_container"
-                    android:layout_width="match_parent"
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_memos"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_marginTop="8dp"
-                    app:layout_constraintTop_toBottomOf="@+id/tv_memo_title"/>
+                    android:layout_marginTop="20dp"
+                    android:minHeight="120dp"
+                    android:orientation="horizontal"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHorizontal_bias="0.0"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/tv_memo_title"
+                    tools:itemCount="3"
+                    tools:listitem="@layout/item_memo" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
         </com.google.android.material.card.MaterialCardView>

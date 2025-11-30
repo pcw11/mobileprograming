@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="150dp"
+    android:layout_height="150dp"
+    android:layout_marginEnd="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="@android:color/transparent">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <EditText
+            android:id="@+id/et_memo_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_memo_dashed"
+            android:fontFamily="@font/pretendard_n"
+            android:gravity="top|start"
+            android:padding="12dp"
+            android:textColor="@color/black"
+            android:textSize="14sp"
+            android:importantForAutofill="no"
+            android:inputType="textMultiLine"
+            android:hint="메모를 입력하세요."
+            tools:text="메모 내용입니다. 여기에 메모가 표시됩니다." />
+
+        <ImageView
+            android:id="@+id/iv_delete_memo"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="4dp"
+            android:padding="4dp"
+            android:src="@drawable/delete"
+            android:visibility="gone"
+            app:tint="@color/gray"
+            tools:visibility="visible" />
+
+    </FrameLayout>
+
+</androidx.cardview.widget.CardView>

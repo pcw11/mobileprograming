@@ -62,6 +62,7 @@ import java.util.regex.Pattern;
 
 import kr.ac.dongyang.mobileproject.plant.Plant;
 import kr.ac.dongyang.mobileproject.plant.PlantAdapter;
+import kr.ac.dongyang.mobileproject.weather.GeoCoder;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -428,7 +429,7 @@ public class MainActivity extends AppCompatActivity {
         weatherList.add(new Weather(R.drawable.cloud, "경기도 부천시 역곡동", "구름 많음 18°C☁️"));
         weatherList.add(new Weather(R.drawable.rain, "인천광역시 미추홀구", "비 17°C🌧️"));
 
-        weatherAdapter = new WeatherAdapter(weatherList);
+        weatherAdapter = new WeatherAdapter(weatherList, this); // 'this'를 추가하여 Context를 전달
         weatherViewPager.setAdapter(weatherAdapter);
 
         setupIndicators(weatherAdapter.getItemCount());

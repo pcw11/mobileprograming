@@ -34,7 +34,7 @@
         app:layout_constraintStart_toEndOf="@+id/tv_location"
         app:layout_constraintBottom_toBottomOf="@+id/tv_location"
         android:layout_marginStart="8dp"
-        id="@+id/iv_edit_location"
+        android:id="@+id/iv_edit_location"
         />
 
     <TextView

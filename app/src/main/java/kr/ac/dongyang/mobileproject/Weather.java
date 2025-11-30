@@ -22,4 +22,16 @@ public class Weather {
     public String getTemperature() {
         return temperature;
     }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public void setTemperature(String temperature) {
+        this.temperature = temperature;
+    }
+
+    public void setIcon(int icon) {
+        this.icon = icon;
+    }
 }

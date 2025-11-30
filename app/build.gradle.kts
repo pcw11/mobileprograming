@@ -30,6 +30,8 @@ android {
         buildConfigField("String", "DB_USER", "\"${localProperties.getProperty("db.user")}\"")
         buildConfigField("String", "DB_PASSWORD", "\"${localProperties.getProperty("db.password")}\"")
         buildConfigField("String", "SERVER_IP", "\"${localProperties.getProperty("server.ip")}\"")
+        buildConfigField("String", "GEO_API_KEY", "\"${localProperties.getProperty("geo.apikey")}\"")
+        buildConfigField("String", "WEATHER_API_KEY", "\"${localProperties.getProperty("weather.apikey")}\"") // 추가
     }
 
     buildTypes {
@@ -63,7 +65,7 @@ dependencies {
     implementation(libs.coordinatorlayout)
     implementation("com.github.bumptech.glide:glide:4.12.0")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-scalars:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0") // Using Gson for JSON
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
     annotationProcessor("com.github.bumptech.glide:compiler:4.12.0")
     testImplementation(libs.junit)

@@ -1,5 +1,6 @@
 package kr.ac.dongyang.mobileproject;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
@@ -14,6 +15,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.NumberPicker;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,6 +24,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -30,6 +33,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 
 public class ViewPlantActivity extends AppCompatActivity {
@@ -39,6 +43,7 @@ public class ViewPlantActivity extends AppCompatActivity {
     private TextView tvGreeting, tvWaterSubtitle;
     private Button btnSave;
     private RecyclerView rvMemos;
+    private LinearLayout llWaterDates;
     private MemoAdapter memoAdapter;
     private List<String> memoList = new ArrayList<>();
 
@@ -58,6 +63,7 @@ public class ViewPlantActivity extends AppCompatActivity {
         ivMemoAdd = findViewById(R.id.iv_memo_add);
         ivMemoEdit = findViewById(R.id.iv_memo_edit);
         rvMemos = findViewById(R.id.rv_memos);
+        llWaterDates = findViewById(R.id.ll_water_dates);
         btnSave = findViewById(R.id.btn_save_plant);
         ivSearchIcon = findViewById(R.id.iv_search_icon);
         tvGreeting = findViewById(R.id.tv_greeting_add);
@@ -71,7 +77,7 @@ public class ViewPlantActivity extends AppCompatActivity {
             return;
         }
 
-        setupRecyclerView();
+        setupRecyclerViews();
         loadPlantDetails();
 
         ivWaterEdit.setOnClickListener(v -> showWateringCycleDialog());
@@ -87,7 +93,7 @@ public class ViewPlantActivity extends AppCompatActivity {
         });
     }
 
-    private void setupRecyclerView() {
+    private void setupRecyclerViews() {
         rvMemos.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         memoAdapter = new MemoAdapter(memoList);
         rvMemos.setAdapter(memoAdapter);
@@ -115,6 +121,7 @@ public class ViewPlantActivity extends AppCompatActivity {
                             etPlantSpecies.setText(species);
                             etPlantNickname.setText(nickname);
                             tvWaterSubtitle.setText("물 주기는 " + wateringCycle + "일 입니다.");
+                            updateDateViews();
 
                             memoList.clear();
                             if (memosConcat != null && !memosConcat.isEmpty()) {
@@ -146,11 +153,56 @@ public class ViewPlantActivity extends AppCompatActivity {
         builder.setPositiveButton("확인", (dialog, which) -> {
             wateringCycle = numberPicker.getValue();
             tvWaterSubtitle.setText("물 주기는 " + wateringCycle + "일 입니다.");
+            updateDateViews();
             Toast.makeText(this, "물 주기가 " + wateringCycle + "일로 설정되었습니다.", Toast.LENGTH_SHORT).show();
         });
         builder.setNegativeButton("취소", null);
 
         builder.create().show();
+    }
+
+    private void updateDateViews() {
+        llWaterDates.removeAllViews();
+        LayoutInflater inflater = LayoutInflater.from(this);
+
+        Calendar calendar = Calendar.getInstance();
+        int today = calendar.get(Calendar.DAY_OF_MONTH);
+
+        calendar.add(Calendar.DAY_OF_MONTH, -3);
+
+        for (int i = 0; i < 8; i++) {
+            View dateView = inflater.inflate(R.layout.item_date, llWaterDates, false);
+
+            TextView tvDayOfWeek = dateView.findViewById(R.id.tv_day_of_week);
+            TextView tvDate = dateView.findViewById(R.id.tv_date);
+            ImageView ivTodayDot = dateView.findViewById(R.id.iv_today_dot);
+
+            int day = calendar.get(Calendar.DAY_OF_MONTH);
+            int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+
+            tvDate.setText(String.valueOf(day));
+
+            String[] daysOfWeek = {"", "일", "월", "화", "수", "목", "금", "토"};
+            tvDayOfWeek.setText(daysOfWeek[dayOfWeek]);
+
+            if (day == today) {
+                ivTodayDot.setVisibility(View.VISIBLE);
+            } else {
+                ivTodayDot.setVisibility(View.GONE);
+            }
+
+            int color = ContextCompat.getColor(this, R.color.black);
+            if (dayOfWeek == Calendar.SATURDAY) {
+                color = ContextCompat.getColor(this, R.color.blue);
+            } else if (dayOfWeek == Calendar.SUNDAY) {
+                color = ContextCompat.getColor(this, R.color.red);
+            }
+            tvDate.setTextColor(color);
+            tvDayOfWeek.setTextColor(color);
+
+            llWaterDates.addView(dateView);
+            calendar.add(Calendar.DAY_OF_MONTH, 1);
+        }
     }
 
     private void toggleMemoEditMode() {

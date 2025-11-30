@@ -123,19 +123,15 @@
                     app:layout_constraintStart_toStartOf="parent"/>
 
                 <LinearLayout
-                    android:id="@+id/layout_water_cycle"
-                    android:layout_width="match_parent"
+                    android:id="@+id/ll_water_dates"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:layout_marginTop="12dp"
-                    android:gravity="center_horizontal"
                     app:layout_constraintTop_toBottomOf="@+id/tv_water_subtitle"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent">
+                    app:layout_constraintEnd_toEndOf="parent" />
 
-                    <!-- ... water cycle items ... -->
-
-                </LinearLayout>
             </androidx.constraintlayout.widget.ConstraintLayout>
         </com.google.android.material.card.MaterialCardView>
 

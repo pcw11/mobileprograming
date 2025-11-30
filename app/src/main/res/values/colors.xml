@@ -8,6 +8,8 @@
     <color name="m_green">#FFDDF9C7</color>
     <color name="l_green">#FFF7FFE8</color>
     <color name="brown">#FFC48000</color>
+    <color name="red">#FF0000</color>
+    <color name="blue">#0000FF</color>
 
     <!-- register.xml -->
     <color name="register_bg">#DBF3C9</color>

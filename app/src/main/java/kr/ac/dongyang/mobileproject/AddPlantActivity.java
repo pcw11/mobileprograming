@@ -63,7 +63,7 @@ public class AddPlantActivity extends AppCompatActivity {
     private ImageView ivMenu;
     private TextView tvGreeting;
     private EditText etPlantSpecies, etPlantNickname;
-    private ImageView ivWaterEdit, ivMemoAdd, ivMemoEdit, ivPhotoAdd;
+    private ImageView ivWaterEdit, ivMemoAdd, ivMemoEdit, ivPhotoAdd, ivPhotoEdit;
     private TextView tvWaterSubtitle;
     private Button btnSave;
     private RecyclerView rvMemos, rvPhotos;
@@ -75,7 +75,8 @@ public class AddPlantActivity extends AppCompatActivity {
 
     private int wateringCycle = 7; // 기본 물 주기 7일
     private String userId;
-    private boolean isEditMode = false;
+    private boolean isMemoEditMode = false;
+    private boolean isPhotoEditMode = false;
     private Date lastWateredDate;
     private FileUploadManager fileUploadManager;
     private Uri photoURI;
@@ -99,6 +100,7 @@ public class AddPlantActivity extends AppCompatActivity {
         ivWaterEdit = findViewById(R.id.iv_water_edit);
         tvWaterSubtitle = findViewById(R.id.tv_water_subtitle);
         ivPhotoAdd = findViewById(R.id.iv_photo_add);
+        ivPhotoEdit = findViewById(R.id.iv_photo_edit);
         ivMemoAdd = findViewById(R.id.iv_memo_add);
         ivMemoEdit = findViewById(R.id.iv_memo_edit);
         rvMemos = findViewById(R.id.rv_memos);
@@ -135,6 +137,7 @@ public class AddPlantActivity extends AppCompatActivity {
 
         // 사진 추가/수정 버튼 리스너
         ivPhotoAdd.setOnClickListener(v -> showImageSourceDialog());
+        ivPhotoEdit.setOnClickListener(v -> togglePhotoEditMode());
         // 메모 추가/수정 버튼 리스너
         ivMemoAdd.setOnClickListener(v -> {
             int insertPosition = memoList.size();
@@ -259,8 +262,13 @@ public class AddPlantActivity extends AppCompatActivity {
     }
 
     private void toggleMemoEditMode() {
-        isEditMode = !isEditMode;
-        memoAdapter.setEditMode(isEditMode);
+        isMemoEditMode = !isMemoEditMode;
+        memoAdapter.setEditMode(isMemoEditMode);
+    }
+
+    private void togglePhotoEditMode() {
+        isPhotoEditMode = !isPhotoEditMode;
+        photoAdapter.setEditMode(isPhotoEditMode);
     }
 
     private void showImageSourceDialog() {
@@ -472,9 +480,15 @@ public class AddPlantActivity extends AppCompatActivity {
         private static final int VIEW_TYPE_ADD = 1;
 
         private List<String> photos; // 이 리스트는 Uri 문자열을 담고 있음
+        private boolean isEditMode = false;
 
         public PhotoAdapter(List<String> photos) {
             this.photos = photos;
+        }
+
+        public void setEditMode(boolean editMode) {
+            this.isEditMode = editMode;
+            notifyDataSetChanged();
         }
 
         @Override
@@ -503,6 +517,15 @@ public class AddPlantActivity extends AppCompatActivity {
                 Glide.with(photoHolder.imageView.getContext())
                      .load(imageUri)
                      .into(photoHolder.imageView);
+
+                photoHolder.ivDeletePhoto.setVisibility(isEditMode ? View.VISIBLE : View.GONE);
+                photoHolder.ivDeletePhoto.setOnClickListener(v -> {
+                    int currentPosition = photoHolder.getAdapterPosition();
+                    if (currentPosition != RecyclerView.NO_POSITION) {
+                        photos.remove(currentPosition);
+                        notifyItemRemoved(currentPosition);
+                    }
+                });
             } else {
                 AddButtonViewHolder addButtonHolder = (AddButtonViewHolder) holder;
                 addButtonHolder.addButton.setOnClickListener(v -> showImageSourceDialog());
@@ -516,9 +539,12 @@ public class AddPlantActivity extends AppCompatActivity {
 
         class PhotoViewHolder extends RecyclerView.ViewHolder {
             ImageView imageView;
+            ImageView ivDeletePhoto;
+
             public PhotoViewHolder(@NonNull View itemView) {
                 super(itemView);
                 imageView = itemView.findViewById(R.id.iv_photo);
+                ivDeletePhoto = itemView.findViewById(R.id.iv_delete_photo);
             }
         }
 

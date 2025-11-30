@@ -213,7 +213,6 @@ public class MainActivity extends AppCompatActivity {
                 if (response.isSuccessful()) {
                     String imageUrl = response.body();
                     Toast.makeText(MainActivity.this, "Upload successful: " + imageUrl, Toast.LENGTH_LONG).show();
-                    // TODO: DB에 imageUrl 저장
                 } else {
                     Toast.makeText(MainActivity.this, "Upload failed: " + response.code() + " " + response.message(), Toast.LENGTH_SHORT).show();
                     try {

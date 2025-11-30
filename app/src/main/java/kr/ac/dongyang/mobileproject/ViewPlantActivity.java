@@ -64,7 +64,7 @@ public class ViewPlantActivity extends AppCompatActivity {
     private NavigationView navigationView;
     private ImageView ivMenu;
     private EditText etPlantSpecies, etPlantNickname;
-    private ImageView ivWaterEdit, ivMemoAdd, ivSearchIcon, ivMemoEdit, ivPhotoAdd;
+    private ImageView ivWaterEdit, ivMemoAdd, ivSearchIcon, ivMemoEdit, ivPhotoAdd, ivPhotoEdit;
     private TextView tvGreeting, tvWaterSubtitle;
     private RecyclerView rvMemos, rvPhotos;
     private LinearLayout llWaterDates;
@@ -75,7 +75,8 @@ public class ViewPlantActivity extends AppCompatActivity {
 
     private int wateringCycle = 7;
     private long plantId;
-    private boolean isEditMode = false;
+    private boolean isMemoEditMode = false;
+    private boolean isPhotoEditMode = false;
     private Date lastWateredDate;
     private FileUploadManager fileUploadManager;
     private Uri photoURI;
@@ -110,6 +111,7 @@ public class ViewPlantActivity extends AppCompatActivity {
         ivSearchIcon = findViewById(R.id.iv_search_icon);
         tvGreeting = findViewById(R.id.tv_greeting_add);
         ivPhotoAdd = findViewById(R.id.iv_photo_add);
+        ivPhotoEdit = findViewById(R.id.iv_photo_edit);
 
         fileUploadManager = new FileUploadManager(this);
 
@@ -145,6 +147,7 @@ public class ViewPlantActivity extends AppCompatActivity {
             rvMemos.scrollToPosition(insertPosition);
         });
         ivMemoEdit.setOnClickListener(v -> toggleMemoEditMode());
+        ivPhotoEdit.setOnClickListener(v -> togglePhotoEditMode());
         ivSearchIcon.setOnClickListener(v -> {
             String species = etPlantSpecies.getText().toString();
             if (!species.isEmpty()) {
@@ -489,8 +492,13 @@ public class ViewPlantActivity extends AppCompatActivity {
     }
 
     private void toggleMemoEditMode() {
-        isEditMode = !isEditMode;
-        memoAdapter.setEditMode(isEditMode);
+        isMemoEditMode = !isMemoEditMode;
+        memoAdapter.setEditMode(isMemoEditMode);
+    }
+
+    private void togglePhotoEditMode() {
+        isPhotoEditMode = !isPhotoEditMode;
+        photoAdapter.setEditMode(isPhotoEditMode);
     }
 
     private void updatePlantData() {
@@ -551,14 +559,49 @@ public class ViewPlantActivity extends AppCompatActivity {
         }).start();
     }
 
+    private void deletePhotoFromDatabase(String imageUrl, int position) {
+        new Thread(() -> {
+            try (Connection conn = new DatabaseConnector(this).getConnection()) {
+                String sql = "DELETE FROM plant_images WHERE plant_id = ? AND image_url = ?";
+                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    pstmt.setLong(1, plantId);
+                    pstmt.setString(2, imageUrl);
+                    int affectedRows = pstmt.executeUpdate();
+                    if (affectedRows > 0) {
+                        new Handler(Looper.getMainLooper()).post(() -> {
+                            photoList.remove(position);
+                            photoAdapter.notifyItemRemoved(position);
+                            Toast.makeText(ViewPlantActivity.this, "사진이 삭제되었습니다.", Toast.LENGTH_SHORT).show();
+                        });
+                    } else {
+                        new Handler(Looper.getMainLooper()).post(() -> {
+                            Toast.makeText(ViewPlantActivity.this, "사진 삭제에 실패했습니다.", Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                }
+            } catch (Exception e) {
+                Log.e("DB_ERROR", "사진 삭제 중 오류 발생", e);
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    Toast.makeText(ViewPlantActivity.this, "데이터베이스 오류가 발생했습니다.", Toast.LENGTH_SHORT).show();
+                });
+            }
+        }).start();
+    }
+
     class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         private static final int VIEW_TYPE_PHOTO = 0;
         private static final int VIEW_TYPE_ADD = 1;
 
         private List<String> photos;
+        private boolean isEditMode = false;
 
         public PhotoAdapter(List<String> photos) {
             this.photos = photos;
+        }
+
+        public void setEditMode(boolean editMode) {
+            this.isEditMode = editMode;
+            notifyDataSetChanged();
         }
 
         @Override
@@ -591,6 +634,14 @@ public class ViewPlantActivity extends AppCompatActivity {
                 Glide.with(photoHolder.imageView.getContext())
                      .load(imageUrl)
                      .into(photoHolder.imageView);
+
+                photoHolder.ivDeletePhoto.setVisibility(isEditMode ? View.VISIBLE : View.GONE);
+                photoHolder.ivDeletePhoto.setOnClickListener(v -> {
+                    int currentPosition = photoHolder.getAdapterPosition();
+                    if (currentPosition != RecyclerView.NO_POSITION) {
+                        deletePhotoFromDatabase(photos.get(currentPosition), currentPosition);
+                    }
+                });
             } else {
                 AddButtonViewHolder addButtonHolder = (AddButtonViewHolder) holder;
                 addButtonHolder.addButton.setOnClickListener(v -> showImageSourceDialog());
@@ -604,10 +655,12 @@ public class ViewPlantActivity extends AppCompatActivity {
 
         class PhotoViewHolder extends RecyclerView.ViewHolder {
             ImageView imageView;
+            ImageView ivDeletePhoto;
 
             public PhotoViewHolder(@NonNull View itemView) {
                 super(itemView);
                 imageView = itemView.findViewById(R.id.iv_photo);
+                ivDeletePhoto = itemView.findViewById(R.id.iv_delete_photo);
             }
         }
 

@@ -165,14 +165,13 @@
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingBottom="16dp">
+                    android:padding="16dp">
 
                     <TextView
                         android:id="@+id/tv_photo_title"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/pretendard_b"
-                        android:padding="16dp"
                         android:text="사진"
                         android:textColor="@color/black"
                         android:textSize="18sp"
@@ -184,11 +183,21 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/add"
-                        android:layout_marginEnd="16dp"
                         app:tint="@color/gray"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintTop_toTopOf="@+id/tv_photo_title"
                         app:layout_constraintBottom_toBottomOf="@+id/tv_photo_title"/>
+
+                    <ImageView
+                        android:id="@+id/iv_photo_edit"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="8dp"
+                        android:src="@drawable/edit"
+                        app:tint="@color/gray"
+                        app:layout_constraintEnd_toStartOf="@+id/iv_photo_add"
+                        app:layout_constraintTop_toTopOf="@+id/tv_photo_title"
+                        app:layout_constraintBottom_toBottomOf="@+id/tv_photo_title" />
 
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/rv_photos"
@@ -196,8 +205,6 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:layout_marginTop="12dp"
-                        android:paddingStart="16dp"
-                        android:paddingEnd="16dp"
                         android:clipToPadding="false"
                         app:layout_constraintTop_toBottomOf="@+id/tv_photo_title"
                         app:layout_constraintStart_toStartOf="parent"
@@ -252,9 +259,9 @@
                         android:layout_marginEnd="8dp"
                         android:src="@drawable/edit"
                         app:tint="@color/gray"
-                        app:layout_constraintEnd_toStartOf="@id/iv_memo_add"
-                        app:layout_constraintTop_toTopOf="@id/tv_memo_title"
-                        app:layout_constraintBottom_toBottomOf="@id/tv_memo_title" />
+                        app:layout_constraintEnd_toStartOf="@+id/iv_memo_add"
+                        app:layout_constraintTop_toTopOf="@+id/tv_memo_title"
+                        app:layout_constraintBottom_toBottomOf="@+id/tv_memo_title" />
 
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/rv_memos"

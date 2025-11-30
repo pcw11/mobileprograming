@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -18,18 +17,26 @@
         android:layout_height="wrap_content"
         android:background="@android:color/transparent">
 
-        <com.google.android.material.imageview.ShapeableImageView
-            android:id="@+id/iv_plant_profile"
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/image_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:scaleType="centerCrop"
+            app:cardCornerRadius="20dp"
             android:layout_margin="4dp"
-            android:visibility="gone"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:shapeAppearanceOverlay="@style/ShapeAppearance.App.Corner.Top"
-            tools:src="@drawable/plant_sample" />
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/iv_plant_profile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:scaleType="fitCenter"
+                android:visibility="visible"
+                tools:src="@drawable/plant_sample" />
+
+        </com.google.android.material.card.MaterialCardView>
 
         <TextView
             android:id="@+id/tv_plant_name"
@@ -40,7 +47,7 @@
             android:fontFamily="@font/pretendard_b"
             android:textColor="@color/black"
             android:textSize="20sp"
-            app:layout_constraintTop_toBottomOf="@+id/iv_plant_profile"
+            app:layout_constraintTop_toBottomOf="@+id/image_card"
             app:layout_constraintStart_toStartOf="parent"
             tools:text="아이비" />
 

@@ -253,7 +253,7 @@
                         app:tint="@color/gray"
                         app:layout_constraintEnd_toStartOf="@id/iv_memo_add"
                         app:layout_constraintTop_toTopOf="@+id/tv_memo_title"
-                        app:layout_constraintBottom_toBottomOf="@id/tv_memo_title" />
+                        app:layout_constraintBottom_toBottomOf="@+id/tv_memo_title" />
 
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/rv_memos"
@@ -278,6 +278,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="저장하기"
+                android:visibility="gone"
                 android:textColor="@color/white"
                 android:fontFamily="@font/pretendard_b"
                 android:textSize="16sp"

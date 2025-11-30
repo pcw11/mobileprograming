@@ -51,6 +51,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 public class ViewPlantActivity extends AppCompatActivity {
 
@@ -65,7 +66,6 @@ public class ViewPlantActivity extends AppCompatActivity {
     private EditText etPlantSpecies, etPlantNickname;
     private ImageView ivWaterEdit, ivMemoAdd, ivSearchIcon, ivMemoEdit, ivPhotoAdd;
     private TextView tvGreeting, tvWaterSubtitle;
-    private Button btnSave;
     private RecyclerView rvMemos, rvPhotos;
     private LinearLayout llWaterDates;
     private MemoAdapter memoAdapter;
@@ -79,6 +79,11 @@ public class ViewPlantActivity extends AppCompatActivity {
     private Date lastWateredDate;
     private FileUploadManager fileUploadManager;
     private Uri photoURI;
+
+    // 원본 데이터 저장을 위한 변수
+    private String originalSpecies, originalNickname;
+    private int originalWateringCycle;
+    private List<String> originalMemoList = new ArrayList<>();
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -101,7 +106,6 @@ public class ViewPlantActivity extends AppCompatActivity {
         rvMemos = findViewById(R.id.rv_memos);
         rvPhotos = findViewById(R.id.rv_photos);
         llWaterDates = findViewById(R.id.ll_water_dates);
-        btnSave = findViewById(R.id.btn_save_plant);
         ivSearchIcon = findViewById(R.id.iv_search_icon);
         tvGreeting = findViewById(R.id.tv_greeting_add);
         ivPhotoAdd = findViewById(R.id.iv_photo_add);
@@ -135,7 +139,6 @@ public class ViewPlantActivity extends AppCompatActivity {
         ivWaterEdit.setOnClickListener(v -> showWateringCycleDialog());
         ivMemoAdd.setVisibility(View.GONE);
         ivMemoEdit.setOnClickListener(v -> toggleMemoEditMode());
-        btnSave.setOnClickListener(v -> updatePlantData());
         ivSearchIcon.setOnClickListener(v -> {
             String species = etPlantSpecies.getText().toString();
             if (!species.isEmpty()) {
@@ -144,6 +147,27 @@ public class ViewPlantActivity extends AppCompatActivity {
             }
         });
         ivPhotoAdd.setOnClickListener(v -> showImageSourceDialog());
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        checkForChangesAndSave();
+    }
+
+    private void checkForChangesAndSave() {
+        String currentSpecies = etPlantSpecies.getText().toString();
+        String currentNickname = etPlantNickname.getText().toString();
+        List<String> currentMemos = memoAdapter.getMemos();
+
+        boolean hasChanges = !Objects.equals(currentSpecies, originalSpecies) ||
+                             !Objects.equals(currentNickname, originalNickname) ||
+                             wateringCycle != originalWateringCycle ||
+                             !currentMemos.equals(originalMemoList);
+
+        if (hasChanges) {
+            updatePlantData();
+        }
     }
 
     private void logout() {
@@ -186,17 +210,18 @@ public class ViewPlantActivity extends AppCompatActivity {
                     pstmt.setLong(1, plantId);
                     ResultSet rs = pstmt.executeQuery();
                     if (rs.next()) {
-                        String species = rs.getString("species");
-                        String nickname = rs.getString("nickname");
-                        String userId = rs.getString("user_id");
-                        wateringCycle = rs.getInt("watering_cycle");
+                        originalSpecies = rs.getString("species");
+                        originalNickname = rs.getString("nickname");
+                        originalWateringCycle = rs.getInt("watering_cycle");
                         lastWateredDate = rs.getDate("last_watered_date");
+                        String userId = rs.getString("user_id");
 
                         new Handler(Looper.getMainLooper()).post(() -> {
                             tvGreeting.setText(userId + "님 안녕하세요!");
-                            etPlantSpecies.setText(species);
-                            etPlantNickname.setText(nickname);
-                            tvWaterSubtitle.setText("물 주기는 " + wateringCycle + "일 입니다.");
+                            etPlantSpecies.setText(originalSpecies);
+                            etPlantNickname.setText(originalNickname);
+                            tvWaterSubtitle.setText("물 주기는 " + originalWateringCycle + "일 입니다.");
+                            wateringCycle = originalWateringCycle;
                             updateDateViews();
                         });
                     }
@@ -207,9 +232,12 @@ public class ViewPlantActivity extends AppCompatActivity {
                 try (PreparedStatement pstmt = conn.prepareStatement(memoSql)) {
                     pstmt.setLong(1, plantId);
                     ResultSet rs = pstmt.executeQuery();
+                    originalMemoList.clear();
                     memoList.clear();
                     while (rs.next()) {
-                        memoList.add(rs.getString("content"));
+                        String memo = rs.getString("content");
+                        originalMemoList.add(memo);
+                        memoList.add(memo);
                     }
                     new Handler(Looper.getMainLooper()).post(() -> memoAdapter.notifyDataSetChanged());
                 }
@@ -374,8 +402,6 @@ public class ViewPlantActivity extends AppCompatActivity {
     }
 
 
-    // (기존의 다른 메서드들은 여기에 그대로 유지됩니다)
-    // ... showWateringCycleDialog, updateDateViews, toggleMemoEditMode, updatePlantData, MemoAdapter 등 ...
     private void showWateringCycleDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("물 주기 설정");
@@ -510,7 +536,6 @@ public class ViewPlantActivity extends AppCompatActivity {
                 new Handler(Looper.getMainLooper()).post(() -> {
                     Toast.makeText(this, "식물 정보가 수정되었습니다.", Toast.LENGTH_SHORT).show();
                     setResult(RESULT_OK);
-                    finish();
                 });
 
             } catch (Exception e) {

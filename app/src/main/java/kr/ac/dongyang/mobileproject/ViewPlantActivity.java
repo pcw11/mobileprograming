@@ -53,6 +53,7 @@ public class ViewPlantActivity extends AppCompatActivity {
     private static final int REQUEST_IMAGE_CAPTURE = 1;
     private static final int REQUEST_GALLERY_IMAGE = 2;
     private static final int PERMISSION_REQUEST_CODE = 100;
+    private static final String KEY_PHOTO_URI = "key_photo_uri";
 
     private EditText etPlantSpecies, etPlantNickname;
     private ImageView ivWaterEdit, ivMemoAdd, ivSearchIcon, ivMemoEdit, ivPhotoAdd;
@@ -76,6 +77,10 @@ public class ViewPlantActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_view_plant);
+
+        if (savedInstanceState != null) {
+            photoURI = savedInstanceState.getParcelable(KEY_PHOTO_URI);
+        }
 
         etPlantSpecies = findViewById(R.id.et_plant_species);
         etPlantNickname = findViewById(R.id.et_plant_nickname);
@@ -117,6 +122,14 @@ public class ViewPlantActivity extends AppCompatActivity {
             }
         });
         ivPhotoAdd.setOnClickListener(v -> showImageSourceDialog());
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (photoURI != null) {
+            outState.putParcelable(KEY_PHOTO_URI, photoURI);
+        }
     }
 
     private void setupRecyclerViews() {

@@ -33,9 +33,11 @@ import kr.ac.dongyang.mobileproject.ViewPlantActivity;
 public class PlantAdapter extends RecyclerView.Adapter<PlantAdapter.PlantViewHolder> {
 
     private ArrayList<Plant> plantList;
+    private int viewPlantRequestCode; // 요청 코드 저장을 위한 변수
 
-    public PlantAdapter(ArrayList<Plant> plantList) {
+    public PlantAdapter(ArrayList<Plant> plantList, int viewPlantRequestCode) {
         this.plantList = plantList;
+        this.viewPlantRequestCode = viewPlantRequestCode;
     }
 
     @NonNull
@@ -50,36 +52,26 @@ public class PlantAdapter extends RecyclerView.Adapter<PlantAdapter.PlantViewHol
     public void onBindViewHolder(@NonNull PlantViewHolder holder, int position) {
         Plant plant = plantList.get(position);
 
-        // 식물 이름 설정
+        // ... (기존 바인딩 코드) ...
         holder.tvName.setText(plant.getName());
-
-        // 별명 유무에 따라 TextView 가시성 조절
         if (plant.getNickname() != null && !plant.getNickname().isEmpty()) {
             holder.tvNickname.setVisibility(View.VISIBLE);
             holder.tvNickname.setText(plant.getNickname());
         } else {
             holder.tvNickname.setVisibility(View.GONE);
         }
-
-        // 사진 URL 유무에 따라 ImageView 가시성 조절
         if (plant.getImageUrl() != null && !plant.getImageUrl().isEmpty()) {
             holder.ivProfile.setVisibility(View.VISIBLE);
-            Glide.with(holder.itemView.getContext())
-                    .load(plant.getImageUrl())
-                    .into(holder.ivProfile);
+            Glide.with(holder.itemView.getContext()).load(plant.getImageUrl()).into(holder.ivProfile);
         } else {
             holder.ivProfile.setVisibility(View.GONE);
         }
-
-        // 메모 유무에 따라 LinearLayout 가시성 조절
         if (plant.getMemo() != null && !plant.getMemo().isEmpty()) {
             holder.llMemoContainer.setVisibility(View.VISIBLE);
             holder.tvMemo.setText(plant.getMemo());
         } else {
             holder.llMemoContainer.setVisibility(View.GONE);
         }
-
-        // 물주기 D-Day 계산 및 표시
         calculateDDay(holder, plant);
 
         // 아이템 클릭 리스너
@@ -87,10 +79,12 @@ public class PlantAdapter extends RecyclerView.Adapter<PlantAdapter.PlantViewHol
             Context context = v.getContext();
             Intent intent = new Intent(context, ViewPlantActivity.class);
             intent.putExtra("PLANT_ID", plant.getPlantId());
-            ((MainActivity) context).startActivityForResult(intent, MainActivity.VIEW_PLANT_REQUEST);
+            // 생성자에서 받은 요청 코드 사용
+            ((MainActivity) context).startActivityForResult(intent, this.viewPlantRequestCode);
         });
     }
 
+    // ... (기존 calculateDDay, getItemCount, PlantViewHolder) ...
     private void calculateDDay(PlantViewHolder holder, Plant plant) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDate lastWateredDate = LocalDate.parse(plant.getLastWateredDate(), formatter);

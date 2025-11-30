@@ -22,6 +22,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -75,9 +76,6 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.scalars.ScalarsConverterFactory;
-import retrofit2.http.Multipart;
-import retrofit2.http.POST;
-import retrofit2.http.Part;
 
 public class MainActivity extends AppCompatActivity implements WeatherAdapter.WeatherDataReloadListener {
 
@@ -172,7 +170,7 @@ public class MainActivity extends AppCompatActivity implements WeatherAdapter.We
         });
 
         // 3. 어댑터 생성 및 연결
-        adapter = new PlantAdapter(plantList);
+        adapter = new PlantAdapter(plantList, VIEW_PLANT_REQUEST);
         recyclerView.setAdapter(adapter);
 
         // 4. 레이아웃 매니저 설정
@@ -815,72 +813,78 @@ public class MainActivity extends AppCompatActivity implements WeatherAdapter.We
         View view = getLayoutInflater().inflate(R.layout.dialog_notification_settings, null);
         builder.setView(view);
 
+        // 기존 물주기 알림 UI
         SwitchMaterial switchNotification = view.findViewById(R.id.switch_notification);
         TimePicker timePicker = view.findViewById(R.id.time_picker_notification);
 
-        SharedPreferences prefs = getSharedPreferences("NotificationPrefs", MODE_PRIVATE);
-        boolean isNotificationEnabled = prefs.getBoolean("isNotificationEnabled", true);
-        int hour = prefs.getInt("notificationHour", 9);
-        int minute = prefs.getInt("notificationMinute", 0);
+        // 새로운 날씨 알림 UI
+        SwitchMaterial switchWeatherNotification = view.findViewById(R.id.switch_weather_notification);
+        LinearLayout layoutLowTemp = view.findViewById(R.id.layout_low_temp);
+        SwitchMaterial switchLowTemp = view.findViewById(R.id.switch_low_temp);
+        EditText etLowTemp = view.findViewById(R.id.et_low_temp);
+        LinearLayout layoutHighTemp = view.findViewById(R.id.layout_high_temp);
+        SwitchMaterial switchHighTemp = view.findViewById(R.id.switch_high_temp);
+        EditText etHighTemp = view.findViewById(R.id.et_high_temp);
+        CheckBox cbRain = view.findViewById(R.id.cb_rain);
+        CheckBox cbSnow = view.findViewById(R.id.cb_snow);
 
-        switchNotification.setChecked(isNotificationEnabled);
-        timePicker.setHour(hour);
-        timePicker.setMinute(minute);
+        // SharedPreferences에서 설정 값 불러오기
+        SharedPreferences prefs = getSharedPreferences("NotificationPrefs", MODE_PRIVATE);
+        // 물주기 알림
+        switchNotification.setChecked(prefs.getBoolean("isNotificationEnabled", true));
+        timePicker.setHour(prefs.getInt("notificationHour", 9));
+        timePicker.setMinute(prefs.getInt("notificationMinute", 0));
+        // 날씨 알림
+        boolean isWeatherEnabled = prefs.getBoolean("isWeatherNotificationEnabled", false);
+        switchWeatherNotification.setChecked(isWeatherEnabled);
+        switchLowTemp.setChecked(prefs.getBoolean("isLowTempEnabled", false));
+        etLowTemp.setText(String.valueOf(prefs.getInt("lowTempThreshold", 10)));
+        switchHighTemp.setChecked(prefs.getBoolean("isHighTempEnabled", false));
+        etHighTemp.setText(String.valueOf(prefs.getInt("highTempThreshold", 30)));
+        cbRain.setChecked(prefs.getBoolean("isRainAlertEnabled", false));
+        cbSnow.setChecked(prefs.getBoolean("isSnowAlertEnabled", false));
+
+        // 날씨 알림 메인 스위치에 따라 하위 설정 활성화/비활성화
+        layoutLowTemp.setVisibility(isWeatherEnabled ? View.VISIBLE : View.GONE);
+        layoutHighTemp.setVisibility(isWeatherEnabled ? View.VISIBLE : View.GONE);
+        cbRain.setVisibility(isWeatherEnabled ? View.VISIBLE : View.GONE);
+        cbSnow.setVisibility(isWeatherEnabled ? View.VISIBLE : View.GONE);
+
+        switchWeatherNotification.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            int visibility = isChecked ? View.VISIBLE : View.GONE;
+            layoutLowTemp.setVisibility(visibility);
+            layoutHighTemp.setVisibility(visibility);
+            cbRain.setVisibility(visibility);
+            cbSnow.setVisibility(visibility);
+        });
 
         builder.setTitle("알림 설정")
                 .setPositiveButton("저장", (dialog, which) -> {
                     SharedPreferences.Editor editor = prefs.edit();
-                    boolean isChecked = switchNotification.isChecked();
-                    int selectedHour = timePicker.getHour();
-                    int selectedMinute = timePicker.getMinute();
 
-                    editor.putBoolean("isNotificationEnabled", isChecked);
-                    editor.putInt("notificationHour", selectedHour);
-                    editor.putInt("notificationMinute", selectedMinute);
+                    // 물주기 알림 저장
+                    editor.putBoolean("isNotificationEnabled", switchNotification.isChecked());
+                    editor.putInt("notificationHour", timePicker.getHour());
+                    editor.putInt("notificationMinute", timePicker.getMinute());
+
+                    // 날씨 알림 저장
+                    editor.putBoolean("isWeatherNotificationEnabled", switchWeatherNotification.isChecked());
+                    editor.putBoolean("isLowTempEnabled", switchLowTemp.isChecked());
+                    editor.putInt("lowTempThreshold", Integer.parseInt(etLowTemp.getText().toString()));
+                    editor.putBoolean("isHighTempEnabled", switchHighTemp.isChecked());
+                    editor.putInt("highTempThreshold", Integer.parseInt(etHighTemp.getText().toString()));
+                    editor.putBoolean("isRainAlertEnabled", cbRain.isChecked());
+                    editor.putBoolean("isSnowAlertEnabled", cbSnow.isChecked());
+                    
                     editor.apply();
 
-                    if (isChecked) {
-                        scheduleNotification(selectedHour, selectedMinute);
-                    } else {
-                        cancelNotification();
-                    }
-
+                    // TODO: WorkManager를 사용하여 백그라운드 날씨 확인 작업 스케줄링/취소 로직 추가
+                    
                     Toast.makeText(this, "알림 설정이 저장되었습니다.", Toast.LENGTH_SHORT).show();
                 })
                 .setNegativeButton("취소", null);
 
         builder.create().show();
-    }
-
-    private void scheduleNotification(int hour, int minute) {
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent intent = new Intent(this, NotificationReceiver.class);
-        intent.putExtra("USER_ID", currentUserId);
-
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(System.currentTimeMillis());
-        calendar.set(Calendar.HOUR_OF_DAY, hour);
-        calendar.set(Calendar.MINUTE, minute);
-        calendar.set(Calendar.SECOND, 0);
-
-        if (calendar.getTimeInMillis() <= System.currentTimeMillis()) {
-            calendar.add(Calendar.DAY_OF_MONTH, 1);
-        }
-
-        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(),
-                AlarmManager.INTERVAL_DAY, pendingIntent);
-    }
-
-    private void cancelNotification() {
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent intent = new Intent(this, NotificationReceiver.class);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_NO_CREATE);
-        if (pendingIntent != null) {
-            alarmManager.cancel(pendingIntent);
-            pendingIntent.cancel();
-        }
     }
 
     private void requestNotificationPermission() {
@@ -900,11 +904,5 @@ public class MainActivity extends AppCompatActivity implements WeatherAdapter.We
                 requestPermissions(new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 102);
             }
         }
-    }
-
-    public interface ApiService {
-        @Multipart
-        @POST("/upload")
-        Call<String> uploadImage(@Part MultipartBody.Part image);
     }
 }

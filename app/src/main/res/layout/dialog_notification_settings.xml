@@ -1,22 +1,129 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="24dp">
+    android:layout_height="wrap_content">
 
-    <com.google.android.material.switchmaterial.SwitchMaterial
-        android:id="@+id/switch_notification"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="알림 받기"
-        android:textSize="16sp" />
+        android:orientation="vertical"
+        android:padding="20dp">
 
-    <TimePicker
-        android:id="@+id/time_picker_notification"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:timePickerMode="spinner" />
+        <!-- 기존 알림 설정 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="물주기 알림 설정"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
-</LinearLayout>
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switch_notification"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="알림 받기" />
+
+        <TimePicker
+            android:id="@+id/time_picker_notification"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:timePickerMode="spinner" />
+
+        <!-- 구분선 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="24dp"
+            android:background="?android:attr/listDivider" />
+
+        <!-- 날씨 알림 설정 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="날씨 알림 설정"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switch_weather_notification"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="날씨 변동 알림 받기" />
+
+        <!-- 낮은 온도 알림 -->
+        <LinearLayout
+            android:id="@+id/layout_low_temp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="8dp">
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switch_low_temp"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="낮은 온도 알림" />
+
+            <EditText
+                android:id="@+id/et_low_temp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberSigned"
+                android:hint="10"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="°C 이하"/>
+        </LinearLayout>
+
+        <!-- 높은 온도 알림 -->
+        <LinearLayout
+            android:id="@+id/layout_high_temp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switch_high_temp"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="높은 온도 알림" />
+
+            <EditText
+                android:id="@+id/et_high_temp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberSigned"
+                android:hint="30"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="°C 이상"/>
+        </LinearLayout>
+
+        <!-- 특정 날씨 알림 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="특정 날씨 알림"/>
+
+        <CheckBox
+            android:id="@+id/cb_rain"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="비"/>
+
+        <CheckBox
+            android:id="@+id/cb_snow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="눈"/>
+
+    </LinearLayout>
+</ScrollView>

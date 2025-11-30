@@ -165,6 +165,17 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
+                <ImageView
+                    android:id="@+id/iv_photo_add"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/add"
+                    android:layout_marginEnd="16dp"
+                    app:tint="@color/gray"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/tv_photo_title"
+                    app:layout_constraintBottom_toBottomOf="@+id/tv_photo_title"/>
+
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rv_photos"
                     android:layout_width="0dp"
@@ -216,8 +227,8 @@
                     android:layout_height="24dp"
                     android:src="@drawable/add"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="@id/tv_memo_title"
-                    app:layout_constraintBottom_toBottomOf="@id/tv_memo_title" />
+                    app:layout_constraintTop_toTopOf="@+id/tv_memo_title"
+                    app:layout_constraintBottom_toBottomOf="@+id/tv_memo_title" />
 
                 <ImageView
                     android:id="@+id/iv_memo_edit"
@@ -227,7 +238,7 @@
                     android:src="@drawable/edit"
                     app:tint="@color/gray"
                     app:layout_constraintEnd_toStartOf="@id/iv_memo_add"
-                    app:layout_constraintTop_toTopOf="@id/tv_memo_title"
+                    app:layout_constraintTop_toTopOf="@+id/tv_memo_title"
                     app:layout_constraintBottom_toBottomOf="@id/tv_memo_title" />
 
                 <androidx.recyclerview.widget.RecyclerView

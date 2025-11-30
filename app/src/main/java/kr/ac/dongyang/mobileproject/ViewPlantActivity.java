@@ -3,10 +3,13 @@ package kr.ac.dongyang.mobileproject;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,34 +27,50 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+
+import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 public class ViewPlantActivity extends AppCompatActivity {
 
+    private static final int REQUEST_IMAGE_CAPTURE = 1;
+    private static final int REQUEST_GALLERY_IMAGE = 2;
+    private static final int PERMISSION_REQUEST_CODE = 100;
+
     private EditText etPlantSpecies, etPlantNickname;
-    private ImageView ivWaterEdit, ivMemoAdd, ivSearchIcon, ivMemoEdit;
+    private ImageView ivWaterEdit, ivMemoAdd, ivSearchIcon, ivMemoEdit, ivPhotoAdd;
     private TextView tvGreeting, tvWaterSubtitle;
     private Button btnSave;
-    private RecyclerView rvMemos;
+    private RecyclerView rvMemos, rvPhotos;
     private LinearLayout llWaterDates;
     private MemoAdapter memoAdapter;
+    private PhotoAdapter photoAdapter;
     private List<String> memoList = new ArrayList<>();
+    private List<String> photoList = new ArrayList<>();
 
     private int wateringCycle = 7;
     private long plantId;
     private boolean isEditMode = false;
     private Date lastWateredDate;
+    private FileUploadManager fileUploadManager;
+    private Uri photoURI;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -65,10 +84,14 @@ public class ViewPlantActivity extends AppCompatActivity {
         ivMemoAdd = findViewById(R.id.iv_memo_add);
         ivMemoEdit = findViewById(R.id.iv_memo_edit);
         rvMemos = findViewById(R.id.rv_memos);
+        rvPhotos = findViewById(R.id.rv_photos);
         llWaterDates = findViewById(R.id.ll_water_dates);
         btnSave = findViewById(R.id.btn_save_plant);
         ivSearchIcon = findViewById(R.id.iv_search_icon);
         tvGreeting = findViewById(R.id.tv_greeting_add);
+        ivPhotoAdd = findViewById(R.id.iv_photo_add);
+
+        fileUploadManager = new FileUploadManager(this);
 
         Intent intent = getIntent();
         plantId = intent.getLongExtra("PLANT_ID", -1);
@@ -83,7 +106,7 @@ public class ViewPlantActivity extends AppCompatActivity {
         loadPlantDetails();
 
         ivWaterEdit.setOnClickListener(v -> showWateringCycleDialog());
-        ivMemoAdd.setVisibility(View.GONE); // The add button is now in the RecyclerView
+        ivMemoAdd.setVisibility(View.GONE);
         ivMemoEdit.setOnClickListener(v -> toggleMemoEditMode());
         btnSave.setOnClickListener(v -> updatePlantData());
         ivSearchIcon.setOnClickListener(v -> {
@@ -93,31 +116,33 @@ public class ViewPlantActivity extends AppCompatActivity {
                 startActivity(browserIntent);
             }
         });
+        ivPhotoAdd.setOnClickListener(v -> showImageSourceDialog());
     }
 
     private void setupRecyclerViews() {
         rvMemos.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         memoAdapter = new MemoAdapter(memoList);
         rvMemos.setAdapter(memoAdapter);
+
+        rvPhotos.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        photoAdapter = new PhotoAdapter(photoList);
+        rvPhotos.setAdapter(photoAdapter);
     }
 
     private void loadPlantDetails() {
         new Thread(() -> {
             try (Connection conn = new DatabaseConnector(this).getConnection()) {
-                String sql = "SELECT p.species, p.nickname, p.watering_cycle, p.user_id, p.last_watered_date, GROUP_CONCAT(pm.content SEPARATOR '\n') as memos " +
-                             "FROM plants p LEFT JOIN plant_memos pm ON p.plant_id = pm.plant_id " +
-                             "WHERE p.plant_id = ? GROUP BY p.plant_id";
-                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                // 식물 기본 정보 로드
+                String plantSql = "SELECT p.species, p.nickname, p.watering_cycle, p.user_id, p.last_watered_date FROM plants p WHERE p.plant_id = ?";
+                try (PreparedStatement pstmt = conn.prepareStatement(plantSql)) {
                     pstmt.setLong(1, plantId);
                     ResultSet rs = pstmt.executeQuery();
-
                     if (rs.next()) {
                         String species = rs.getString("species");
                         String nickname = rs.getString("nickname");
                         String userId = rs.getString("user_id");
                         wateringCycle = rs.getInt("watering_cycle");
                         lastWateredDate = rs.getDate("last_watered_date");
-                        String memosConcat = rs.getString("memos");
 
                         new Handler(Looper.getMainLooper()).post(() -> {
                             tvGreeting.setText(userId + "님 안녕하세요!");
@@ -125,15 +150,34 @@ public class ViewPlantActivity extends AppCompatActivity {
                             etPlantNickname.setText(nickname);
                             tvWaterSubtitle.setText("물 주기는 " + wateringCycle + "일 입니다.");
                             updateDateViews();
-
-                            memoList.clear();
-                            if (memosConcat != null && !memosConcat.isEmpty()) {
-                                memoList.addAll(Arrays.asList(memosConcat.split("\n")));
-                            }
-                            memoAdapter.notifyDataSetChanged();
                         });
                     }
                 }
+
+                // 메모 로드
+                String memoSql = "SELECT content FROM plant_memos WHERE plant_id = ?";
+                try (PreparedStatement pstmt = conn.prepareStatement(memoSql)) {
+                    pstmt.setLong(1, plantId);
+                    ResultSet rs = pstmt.executeQuery();
+                    memoList.clear();
+                    while (rs.next()) {
+                        memoList.add(rs.getString("content"));
+                    }
+                    new Handler(Looper.getMainLooper()).post(() -> memoAdapter.notifyDataSetChanged());
+                }
+
+                // 사진 로드
+                String photoSql = "SELECT image_url FROM plant_images WHERE plant_id = ?";
+                try (PreparedStatement pstmt = conn.prepareStatement(photoSql)) {
+                    pstmt.setLong(1, plantId);
+                    ResultSet rs = pstmt.executeQuery();
+                    photoList.clear();
+                    while (rs.next()) {
+                        photoList.add(rs.getString("image_url"));
+                    }
+                    new Handler(Looper.getMainLooper()).post(() -> photoAdapter.notifyDataSetChanged());
+                }
+
             } catch (Exception e) {
                 Log.e("DB_ERROR", "식물 상세 정보 로딩 중 오류 발생", e);
                 new Handler(Looper.getMainLooper()).post(() -> {
@@ -143,6 +187,147 @@ public class ViewPlantActivity extends AppCompatActivity {
         }).start();
     }
 
+    private void showImageSourceDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("사진 추가");
+        builder.setItems(new CharSequence[]{"카메라로 촬영", "갤러리에서 선택"}, (dialog, which) -> {
+            switch (which) {
+                case 0:
+                    checkCameraPermission();
+                    break;
+                case 1:
+                    openGallery();
+                    break;
+            }
+        });
+        builder.show();
+    }
+
+    private void checkCameraPermission() {
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA}, PERMISSION_REQUEST_CODE);
+        } else {
+            dispatchTakePictureIntent();
+        }
+    }
+
+    private void dispatchTakePictureIntent() {
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            File photoFile = null;
+            try {
+                photoFile = createImageFile();
+            } catch (IOException ex) {
+                Log.e("IMAGE_CAPTURE", "Error creating image file", ex);
+                Toast.makeText(this, "사진 파일을 생성하는데 실패했습니다.", Toast.LENGTH_SHORT).show();
+            }
+            if (photoFile != null) {
+                photoURI = FileProvider.getUriForFile(this,
+                        "kr.ac.dongyang.mobileproject.fileprovider",
+                        photoFile);
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+                startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+            }
+        }
+    }
+
+    private File createImageFile() throws IOException {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new java.util.Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File image = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".jpg",         /* suffix */
+                storageDir      /* directory */
+        );
+        return image;
+    }
+
+    private void openGallery() {
+        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        startActivityForResult(intent, REQUEST_GALLERY_IMAGE);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                dispatchTakePictureIntent();
+            } else {
+                Toast.makeText(this, "카메라 권한이 거부되었습니다.", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK) {
+            Uri selectedImageUri = null;
+            if (requestCode == REQUEST_IMAGE_CAPTURE) {
+                selectedImageUri = photoURI;
+            } else if (requestCode == REQUEST_GALLERY_IMAGE && data != null) {
+                selectedImageUri = data.getData();
+            }
+
+            if (selectedImageUri != null) {
+                uploadImageToServer(selectedImageUri);
+            }
+        }
+    }
+
+    private void uploadImageToServer(Uri imageUri) {
+        fileUploadManager.uploadImage(imageUri, new FileUploadManager.FileUploadCallback() {
+            @Override
+            public void onUploadSuccess(String filename) {
+                String imageUrl = "http://" + BuildConfig.SERVER_IP + ":6006/download/" + filename;
+                saveImageUrlToDatabase(imageUrl);
+            }
+
+            @Override
+            public void onUploadFailure(String message) {
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    Toast.makeText(ViewPlantActivity.this, message, Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
+    private void saveImageUrlToDatabase(String imageUrl) {
+        new Thread(() -> {
+            try (Connection conn = new DatabaseConnector(ViewPlantActivity.this).getConnection()) {
+                String sql = "INSERT INTO plant_images (plant_id, image_url) VALUES (?, ?)";
+                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    pstmt.setLong(1, plantId);
+                    pstmt.setString(2, imageUrl);
+                    int affectedRows = pstmt.executeUpdate();
+
+                    if (affectedRows > 0) {
+                        new Handler(Looper.getMainLooper()).post(() -> {
+                            Toast.makeText(ViewPlantActivity.this, "사진이 추가되었습니다.", Toast.LENGTH_SHORT).show();
+                            photoList.add(imageUrl);
+                            photoAdapter.notifyItemInserted(photoList.size() - 1);
+                            setResult(RESULT_OK); // MainActivity에 변경사항 알림
+                        });
+                    } else {
+                        new Handler(Looper.getMainLooper()).post(() -> {
+                            Toast.makeText(ViewPlantActivity.this, "데이터베이스에 사진 저장 실패", Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                }
+            } catch (Exception e) {
+                Log.e("DB_ERROR", "사진 URL 저장 중 오류 발생", e);
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    Toast.makeText(ViewPlantActivity.this, "데이터베이스 오류가 발생했습니다.", Toast.LENGTH_SHORT).show();
+                });
+            }
+        }).start();
+    }
+
+
+    // (기존의 다른 메서드들은 여기에 그대로 유지됩니다)
+    // ... showWateringCycleDialog, updateDateViews, toggleMemoEditMode, updatePlantData, MemoAdapter 등 ...
     private void showWateringCycleDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("물 주기 설정");
@@ -287,6 +472,43 @@ public class ViewPlantActivity extends AppCompatActivity {
                 });
             }
         }).start();
+    }
+    
+    class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.PhotoViewHolder> {
+        private List<String> photos;
+
+        public PhotoAdapter(List<String> photos) {
+            this.photos = photos;
+        }
+
+        @NonNull
+        @Override
+        public PhotoViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_photo, parent, false);
+            return new PhotoViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull PhotoViewHolder holder, int position) {
+            String imageUrl = photos.get(position);
+            Glide.with(holder.imageView.getContext())
+                 .load(imageUrl)
+                 .into(holder.imageView);
+        }
+
+        @Override
+        public int getItemCount() {
+            return photos.size();
+        }
+
+        class PhotoViewHolder extends RecyclerView.ViewHolder {
+            ImageView imageView;
+
+            public PhotoViewHolder(@NonNull View itemView) {
+                super(itemView);
+                imageView = itemView.findViewById(R.id.iv_photo);
+            }
+        }
     }
 
     // Adapter for the memo RecyclerView

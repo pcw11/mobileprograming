@@ -32,7 +32,7 @@ public class FileUploadManager {
 
     // 콜백 인터페이스 정의
     public interface FileUploadCallback {
-        void onUploadSuccess(String imageUrl);
+        void onUploadSuccess(String filename);
         void onUploadFailure(String message);
     }
 
@@ -61,9 +61,9 @@ public class FileUploadManager {
         call.enqueue(new Callback<String>() {
             @Override
             public void onResponse(@NonNull Call<String> call, @NonNull Response<String> response) {
-                tempFile.delete(); // 임시 파일 삭제
                 if (response.isSuccessful()) {
-                    callback.onUploadSuccess(response.body());
+                    // 서버가 200 OK를 반환하면 성공으로 간주하고, 파일 이름을 콜백으로 전달합니다.
+                    callback.onUploadSuccess(tempFile.getName());
                 } else {
                     String errorMessage = "Upload failed: " + response.code() + " " + response.message();
                     try {
@@ -73,6 +73,7 @@ public class FileUploadManager {
                     }
                     callback.onUploadFailure(errorMessage);
                 }
+                tempFile.delete(); // 임시 파일 삭제
             }
 
             @Override

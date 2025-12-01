@@ -1,24 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF161616</color>
+    <!-- 기본 색상 팔레트 -->
+    <color name="primary">#4CAF50</color> <!-- 메인 녹색 -->
+    <color name="primary_dark">#388E3C</color> <!-- 더 어두운 녹색 -->
+    <color name="primary_light">#C8E6C9</color> <!-- 더 밝은 녹색 -->
+    <color name="accent">#8BC34A</color> <!-- 보조 녹색 -->
+    <color name="primary_text">#212121</color> <!-- 기본 텍스트 색상 -->
+    <color name="secondary_text">#757575</color> <!-- 보조 텍스트 색상 -->
+    <color name="icons">#FFFFFF</color>
+    <color name="divider">#BDBDBD</color>
+
+    <!-- 기존 색상 유지 또는 수정 -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="red">#FF0000</color>
+    <color name="blue">#0000FF</color>
+
+    <!-- 컴포넌트별 색상 -->
+    <color name="login_button_color">@color/primary</color>
+    <color name="register_button_color">@color/primary</color>
+    <color name="register_button_text_disabled">#979797</color>
+
+    <!-- 이전 색상 (필요 시 참고용) -->
     <color name="gray">#FF535353</color>
     <color name="l_gray">#979797</color>
-    <color name="white">#FFFFFFFF</color>
     <color name="green">#FF4CFF7F</color>
     <color name="m_green">#FFDDF9C7</color>
     <color name="l_green">#FFF7FFE8</color>
     <color name="brown">#FFC48000</color>
-    <color name="red">#FF0000</color>
-    <color name="blue">#0000FF</color>
-
-    <!-- register.xml -->
     <color name="register_bg">#DBF3C9</color>
     <color name="register_text">#FF535353</color>
     <color name="register_error">#FF0000</color>
-    <color name="register_button_text_disabled">#979797</color>
     <color name="darker_gray">#AAA</color>
-
-    <!-- Add Plant -->
     <color name="add_plant_card_bg">#F7FDED</color>
-
 </resources>

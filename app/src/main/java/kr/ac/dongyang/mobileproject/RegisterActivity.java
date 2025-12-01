@@ -239,7 +239,7 @@ public class RegisterActivity extends AppCompatActivity {
             PreparedStatement pstmt = null;
             ResultSet rs = null;
             try {
-                conn = DatabaseConnector.getConnection();
+                conn = new DatabaseConnector(this).getConnection();
                 String sql = "SELECT COUNT(*) FROM users WHERE user_id = ?";
                 pstmt = conn.prepareStatement(sql);
                 pstmt.setString(1, userId);
@@ -282,11 +282,11 @@ public class RegisterActivity extends AppCompatActivity {
             Connection conn = null;
             PreparedStatement pstmt = null;
             try {
-                conn = DatabaseConnector.getConnection();
+                conn = new DatabaseConnector(this).getConnection();
                 String sql = "INSERT INTO users (user_id, password, email) VALUES (?, ?, ?)";
                 pstmt = conn.prepareStatement(sql);
                 pstmt.setString(1, userId);
-                pstmt.setString(2, password);
+                pstmt.setString(2, PasswordHasher.hashPassword(password));
                 pstmt.setString(3, email);
                 int rows = pstmt.executeUpdate();
                 if (rows > 0) {

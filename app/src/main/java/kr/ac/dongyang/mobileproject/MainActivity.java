@@ -2,6 +2,8 @@ package kr.ac.dongyang.mobileproject;
 
 import android.annotation.SuppressLint;
 import android.app.AlarmManager;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -204,6 +206,9 @@ public class MainActivity extends AppCompatActivity implements WeatherAdapter.We
 
         // 6. 날씨 뷰페이저 설정
         setupWeatherViewPager();
+
+        // 7. 날씨 알림 채널 생성
+        createWeatherNotificationChannel();
 
         // 8. 알림 권한 요청
         requestNotificationPermission();
@@ -810,19 +815,20 @@ public class MainActivity extends AppCompatActivity implements WeatherAdapter.We
     private void updatePassword(String currentPassword, String newPassword) {
         new Thread(() -> {
             try (Connection conn = new DatabaseConnector(this).getConnection()) {
-                // 1. 현재 비밀번호 확인
                 String checkSql = "SELECT password FROM users WHERE user_id = ?";
                 try (PreparedStatement checkPstmt = conn.prepareStatement(checkSql)) {
                     checkPstmt.setString(1, currentUserId);
                     ResultSet rs = checkPstmt.executeQuery();
 
                     if (rs.next()) {
-                        String dbPassword = rs.getString("password");
-                        if (dbPassword.equals(currentPassword)) {
-                            // 2. 비밀번호 업데이트
+                        String dbPasswordHash = rs.getString("password");
+                        String currentPasswordHash = PasswordHasher.hashPassword(currentPassword);
+
+                        if (dbPasswordHash.equals(currentPasswordHash)) {
+                            String newPasswordHash = PasswordHasher.hashPassword(newPassword);
                             String updateSql = "UPDATE users SET password = ? WHERE user_id = ?";
                             try (PreparedStatement updatePstmt = conn.prepareStatement(updateSql)) {
-                                updatePstmt.setString(1, newPassword);
+                                updatePstmt.setString(1, newPasswordHash);
                                 updatePstmt.setString(2, currentUserId);
                                 int affectedRows = updatePstmt.executeUpdate();
                                 new Handler(Looper.getMainLooper()).post(() -> {
@@ -983,6 +989,18 @@ public class MainActivity extends AppCompatActivity implements WeatherAdapter.We
         builder.create().show();
     }
 
+    private void createWeatherNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "날씨 알림";
+            String description = "설정한 조건에 따라 날씨 정보를 알려줍니다.";
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel("weather_channel", name, importance);
+            channel.setDescription(description);
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
     private void scheduleWeatherCheck() {
         PeriodicWorkRequest weatherWorkRequest =
                 new PeriodicWorkRequest.Builder(WeatherCheckWorker.class, 1, TimeUnit.HOURS)
@@ -1012,7 +1030,6 @@ public class MainActivity extends AppCompatActivity implements WeatherAdapter.We
         calendar.set(Calendar.MINUTE, minute);
         calendar.set(Calendar.SECOND, 0);
 
-        // 만약 설정한 시간이 이미 지났다면, 다음 날로 설정
         if (calendar.getTimeInMillis() <= System.currentTimeMillis()) {
             calendar.add(Calendar.DAY_OF_YEAR, 1);
         }

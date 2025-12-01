@@ -46,6 +46,9 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import androidx.viewpager2.widget.ViewPager2;
+import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
@@ -65,6 +68,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import kr.ac.dongyang.mobileproject.plant.Plant;
@@ -88,6 +92,7 @@ public class MainActivity extends AppCompatActivity implements WeatherAdapter.We
     public static final int VIEW_PLANT_REQUEST = 2;
     private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 101;
     private static final int PICK_IMAGE_REQUEST = 3;
+    private static final String WEATHER_CHECK_WORK_TAG = "weatherCheckWork";
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
@@ -955,23 +960,45 @@ public class MainActivity extends AppCompatActivity implements WeatherAdapter.We
                     }
 
                     // 날씨 알림 저장
-                    editor.putBoolean("isWeatherNotificationEnabled", switchWeatherNotification.isChecked());
+                    boolean isWeatherNotificationEnabled = switchWeatherNotification.isChecked();
+                    editor.putBoolean("isWeatherNotificationEnabled", isWeatherNotificationEnabled);
                     editor.putBoolean("isLowTempEnabled", switchLowTemp.isChecked());
                     editor.putInt("lowTempThreshold", Integer.parseInt(etLowTemp.getText().toString()));
                     editor.putBoolean("isHighTempEnabled", switchHighTemp.isChecked());
                     editor.putInt("highTempThreshold", Integer.parseInt(etHighTemp.getText().toString()));
                     editor.putBoolean("isRainAlertEnabled", cbRain.isChecked());
                     editor.putBoolean("isSnowAlertEnabled", cbSnow.isChecked());
-                    
-                    editor.apply();
 
-                    // TODO: WorkManager를 사용하여 백그라운드 날씨 확인 작업 스케줄링/취소 로직 추가
-                    
+                    if (isWeatherNotificationEnabled) {
+                        scheduleWeatherCheck();
+                    } else {
+                        cancelWeatherCheck();
+                    }
+
+                    editor.apply();
                     Toast.makeText(this, "알림 설정이 저장되었습니다.", Toast.LENGTH_SHORT).show();
                 })
                 .setNegativeButton("취소", null);
 
         builder.create().show();
+    }
+
+    private void scheduleWeatherCheck() {
+        PeriodicWorkRequest weatherWorkRequest =
+                new PeriodicWorkRequest.Builder(WeatherCheckWorker.class, 1, TimeUnit.HOURS)
+                        .build();
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                WEATHER_CHECK_WORK_TAG,
+                ExistingPeriodicWorkPolicy.REPLACE,
+                weatherWorkRequest
+        );
+        Toast.makeText(this, "날씨 확인 작업이 예약되었습니다.", Toast.LENGTH_SHORT).show();
+    }
+
+    private void cancelWeatherCheck() {
+        WorkManager.getInstance(this).cancelUniqueWork(WEATHER_CHECK_WORK_TAG);
+        Toast.makeText(this, "날씨 확인 작업이 취소되었습니다.", Toast.LENGTH_SHORT).show();
     }
 
     private void scheduleWateringAlarm(int hour, int minute) {

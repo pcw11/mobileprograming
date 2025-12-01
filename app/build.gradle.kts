@@ -68,6 +68,7 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.retrofit2:converter-scalars:2.9.0") // 다시 추가
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
+    implementation(libs.work.runtime.ktx)
     annotationProcessor("com.github.bumptech.glide:compiler:4.12.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

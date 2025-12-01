@@ -100,6 +100,9 @@ public class MainActivity extends AppCompatActivity implements WeatherAdapter.We
     private String currentUserId;
     private Button btnUploadTest; // 추가된 버튼
     private List<Weather> weatherList; // 날씨 목록
+    private long backKeyPressedTime = 0;
+    private Toast toast;
+
 
     // Retrofit
     private ApiService apiService;
@@ -203,6 +206,28 @@ public class MainActivity extends AppCompatActivity implements WeatherAdapter.We
         new Handler(Looper.getMainLooper()).postDelayed(this::loadPlantData, 1000); // 1초 지연
         loadSavedWeatherData(); // 날씨 데이터 로드
     }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        if (drawerLayout.isDrawerOpen(GravityCompat.END)) {
+            drawerLayout.closeDrawer(GravityCompat.END);
+        } else {
+            if (System.currentTimeMillis() > backKeyPressedTime + 2000) {
+                backKeyPressedTime = System.currentTimeMillis();
+                toast = Toast.makeText(this, "'뒤로' 버튼을 한번 더 누르시면 종료됩니다.", Toast.LENGTH_SHORT);
+                toast.show();
+                return;
+            }
+            if (System.currentTimeMillis() <= backKeyPressedTime + 2000) {
+                finish();
+                if(toast != null) {
+                    toast.cancel();
+                }
+            }
+        }
+    }
+
 
     @Override
     public void reloadWeatherData() {
@@ -408,9 +433,9 @@ public class MainActivity extends AppCompatActivity implements WeatherAdapter.We
     }
 
     private void showWateringListDialog(List<String> plantsToWater) {
-        StringBuilder message = new StringBuilder("오늘 물을 줘야 할 식물:\n\n");
+        StringBuilder message = new StringBuilder("오늘 물을 줘야 할 식물: \n");
         for (String plantName : plantsToWater) {
-            message.append("- ").append(plantName).append("\n");
+            message.append("- ").append(plantName).append("\n\n");
         }
 
         new AlertDialog.Builder(this)

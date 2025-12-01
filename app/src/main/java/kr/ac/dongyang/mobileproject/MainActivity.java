@@ -1,6 +1,7 @@
 package kr.ac.dongyang.mobileproject;
 // TODO 알림 작동 위한 기능 추가, 식물 추가 버튼 수정, 뒤로가기 두번 작동시만 종료, 잠깐 나갔다 왔을때 백그라운드에 살아 있지 않고 다시 리로딩 되는 부분 수정, 세부 메뉴서 드로워 미동작 문제. 디자인 refine
 // TODO 전반적인 색상 수정(날짜 색상, 글자 검은색 색상
+import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -8,6 +9,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -15,11 +17,13 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
+import android.text.InputType;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.Gravity;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -31,6 +35,7 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -199,6 +204,27 @@ public class MainActivity extends AppCompatActivity implements WeatherAdapter.We
         // 8. 알림 권한 요청
         requestNotificationPermission();
         requestStoragePermission();
+
+        // Back button handler
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (drawerLayout.isDrawerOpen(GravityCompat.END)) {
+                    drawerLayout.closeDrawer(GravityCompat.END);
+                } else {
+                    if (System.currentTimeMillis() > backKeyPressedTime + 2000) {
+                        backKeyPressedTime = System.currentTimeMillis();
+                        toast = Toast.makeText(MainActivity.this, "'뒤로' 버튼을 한번 더 누르시면 종료됩니다.", Toast.LENGTH_SHORT);
+                        toast.show();
+                    } else {
+                        finish();
+                        if (toast != null) {
+                            toast.cancel();
+                        }
+                    }
+                }
+            }
+        });
     }
     @Override
     protected void onResume() {
@@ -206,28 +232,6 @@ public class MainActivity extends AppCompatActivity implements WeatherAdapter.We
         new Handler(Looper.getMainLooper()).postDelayed(this::loadPlantData, 1000); // 1초 지연
         loadSavedWeatherData(); // 날씨 데이터 로드
     }
-
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        if (drawerLayout.isDrawerOpen(GravityCompat.END)) {
-            drawerLayout.closeDrawer(GravityCompat.END);
-        } else {
-            if (System.currentTimeMillis() > backKeyPressedTime + 2000) {
-                backKeyPressedTime = System.currentTimeMillis();
-                toast = Toast.makeText(this, "'뒤로' 버튼을 한번 더 누르시면 종료됩니다.", Toast.LENGTH_SHORT);
-                toast.show();
-                return;
-            }
-            if (System.currentTimeMillis() <= backKeyPressedTime + 2000) {
-                finish();
-                if(toast != null) {
-                    toast.cancel();
-                }
-            }
-        }
-    }
-
 
     @Override
     public void reloadWeatherData() {
@@ -433,9 +437,9 @@ public class MainActivity extends AppCompatActivity implements WeatherAdapter.We
     }
 
     private void showWateringListDialog(List<String> plantsToWater) {
-        StringBuilder message = new StringBuilder("오늘 물을 줘야 할 식물: \n");
+        StringBuilder message = new StringBuilder("오늘 물을 줘야 할 식물:\n\n");
         for (String plantName : plantsToWater) {
-            message.append("- ").append(plantName).append("\n\n");
+            message.append("- ").append(plantName).append("\n");
         }
 
         new AlertDialog.Builder(this)
@@ -714,6 +718,7 @@ public class MainActivity extends AppCompatActivity implements WeatherAdapter.We
         }).start();
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private void showChangePasswordDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = getLayoutInflater().inflate(R.layout.dialog_change_password, null);
@@ -722,6 +727,40 @@ public class MainActivity extends AppCompatActivity implements WeatherAdapter.We
         EditText etCurrentPassword = view.findViewById(R.id.et_current_password);
         EditText etNewPassword = view.findViewById(R.id.et_new_password);
         EditText etConfirmNewPassword = view.findViewById(R.id.et_confirm_new_password);
+
+        etCurrentPassword.setOnTouchListener((v, event) -> {
+            final int DRAWABLE_RIGHT = 2;
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                if (event.getRawX() >= (etCurrentPassword.getRight() - etCurrentPassword.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
+                    togglePasswordVisibility(etCurrentPassword);
+                    return true;
+                }
+            }
+            return false;
+        });
+
+        etNewPassword.setOnTouchListener((v, event) -> {
+            final int DRAWABLE_RIGHT = 2;
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                if (event.getRawX() >= (etNewPassword.getRight() - etNewPassword.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
+                    togglePasswordVisibility(etNewPassword);
+                    return true;
+                }
+            }
+            return false;
+        });
+
+        etConfirmNewPassword.setOnTouchListener((v, event) -> {
+            final int DRAWABLE_RIGHT = 2;
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                if (event.getRawX() >= (etConfirmNewPassword.getRight() - etConfirmNewPassword.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
+                    togglePasswordVisibility(etConfirmNewPassword);
+                    return true;
+                }
+            }
+            return false;
+        });
+
 
         builder.setTitle("비밀번호 변경")
                 .setPositiveButton("저장", (dialog, which) -> {
@@ -749,6 +788,19 @@ public class MainActivity extends AppCompatActivity implements WeatherAdapter.We
                 .setNegativeButton("취소", null);
 
         builder.create().show();
+    }
+
+    private void togglePasswordVisibility(EditText editText) {
+        Typeface typeface = editText.getTypeface();
+        if (editText.getInputType() == (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD)) {
+            editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+            editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_visibility_on, 0);
+        } else {
+            editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+            editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_visibility_off, 0);
+        }
+        editText.setTypeface(typeface);
+        editText.setSelection(editText.getText().length());
     }
 
     private void updatePassword(String currentPassword, String newPassword) {

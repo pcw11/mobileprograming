@@ -1,13 +1,18 @@
 package kr.ac.dongyang.mobileproject;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
+import android.text.InputType;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,6 +32,7 @@ public class LoginActivity extends AppCompatActivity {
     private LoginBinding binding;
     private SharedPreferences sharedPreferences;
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,6 +67,18 @@ public class LoginActivity extends AppCompatActivity {
         binding.etId.addTextChangedListener(loginTextWatcher);
         binding.etPassword.addTextChangedListener(loginTextWatcher);
 
+        binding.etPassword.setOnTouchListener((v, event) -> {
+            final int DRAWABLE_RIGHT = 2;
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                if (event.getRawX() >= (binding.etPassword.getRight() - binding.etPassword.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
+                    togglePasswordVisibility();
+                    return true;
+                }
+            }
+            return false;
+        });
+
+
         binding.btnLogin.setOnClickListener(v -> {
             String userId = binding.etId.getText().toString();
             String password  = binding.etPassword.getText().toString();
@@ -71,6 +89,20 @@ public class LoginActivity extends AppCompatActivity {
         chkEmpty(); // 초기 버튼 상태 설정
         checkAutoLogin(); // 자동 로그인 확인
     }
+
+    private void togglePasswordVisibility() {
+        Typeface typeface = binding.etPassword.getTypeface();
+        if (binding.etPassword.getInputType() == (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD)) {
+            binding.etPassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+            binding.etPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_visibility_on, 0);
+        } else {
+            binding.etPassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+            binding.etPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_visibility_off, 0);
+        }
+        binding.etPassword.setTypeface(typeface);
+        binding.etPassword.setSelection(binding.etPassword.getText().length());
+    }
+
 
     private void checkAutoLogin() {
         boolean isAutoLoginEnabled = sharedPreferences.getBoolean("isAutoLogin", false);

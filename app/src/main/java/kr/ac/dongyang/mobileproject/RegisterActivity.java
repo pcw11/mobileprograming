@@ -1,13 +1,18 @@
 package kr.ac.dongyang.mobileproject;
 
+import android.annotation.SuppressLint;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
+import android.text.InputType;
 import android.text.TextWatcher;
 import android.util.Patterns;
+import android.view.MotionEvent;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -44,6 +49,7 @@ public class RegisterActivity extends AppCompatActivity {
         updateRegisterButtonState();
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private void setupListeners() {
         // 아이디 중복확인 버튼 클릭 리스너
         binding.btnCheckDuplicate.setOnClickListener(v -> {
@@ -97,6 +103,17 @@ public class RegisterActivity extends AppCompatActivity {
             }
         });
 
+        binding.etPassword.setOnTouchListener((v, event) -> {
+            final int DRAWABLE_RIGHT = 2;
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                if (event.getRawX() >= (binding.etPassword.getRight() - binding.etPassword.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
+                    togglePasswordVisibility(binding.etPassword);
+                    return true;
+                }
+            }
+            return false;
+        });
+
         // 비밀번호 확인 입력 변경 시
         binding.etPasswordConfirm.addTextChangedListener(new TextWatcher() {
             @Override
@@ -108,6 +125,17 @@ public class RegisterActivity extends AppCompatActivity {
                 validatePasswordConfirmation();
                 updateRegisterButtonState();
             }
+        });
+
+        binding.etPasswordConfirm.setOnTouchListener((v, event) -> {
+            final int DRAWABLE_RIGHT = 2;
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                if (event.getRawX() >= (binding.etPasswordConfirm.getRight() - binding.etPasswordConfirm.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
+                    togglePasswordVisibility(binding.etPasswordConfirm);
+                    return true;
+                }
+            }
+            return false;
         });
 
         // 이메일 입력 변경 시
@@ -148,11 +176,24 @@ public class RegisterActivity extends AppCompatActivity {
         binding.cbAgreePrivacy.setOnCheckedChangeListener(individualCheckboxListener);
         binding.cbAgreeAds.setOnCheckedChangeListener(individualCheckboxListener);
     }
+
+    private void togglePasswordVisibility(EditText editText) {
+        Typeface typeface = editText.getTypeface();
+        if (editText.getInputType() == (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD)) {
+            editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+            editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_visibility_on, 0);
+        } else {
+            editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+            editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_visibility_off, 0);
+        }
+        editText.setTypeface(typeface);
+        editText.setSelection(editText.getText().length());
+    }
     // TODO 회원가입 비밀번호 검증 오류 수정
     private void validatePassword() {
         String password = binding.etPassword.getText().toString().trim();
         // 8자 이상, 영문, 숫자, 특수문자 포함
-        Pattern passwordPattern = Pattern.compile("^(?=.*[A-Za-z])(?=.*\\ㅁㄴd)(?=.*[$@$!%*#?&])[A-Za-z\\d$@$!%*#?&]{8,}$");
+        Pattern passwordPattern = Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[$@$!%*#?&])[A-Za-z\\d$@$!%*#?&]{8,}$");
         isPasswordValid = passwordPattern.matcher(password).matches();
         binding.tvPwStatus.setText(isPasswordValid ? "✅" : "❌");
     }

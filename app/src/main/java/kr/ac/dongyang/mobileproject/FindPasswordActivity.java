@@ -1,10 +1,15 @@
 package kr.ac.dongyang.mobileproject;
 
+import android.annotation.SuppressLint;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
+import android.text.InputType;
 import android.text.TextWatcher;
+import android.view.MotionEvent;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,6 +25,7 @@ public class FindPasswordActivity extends AppCompatActivity {
     private FindpwBinding binding;
     private boolean isVerified = false;
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,6 +45,41 @@ public class FindPasswordActivity extends AppCompatActivity {
 
         // 비밀번호 유효성 검사
         addTextWatchers();
+
+        binding.etPassword.setOnTouchListener((v, event) -> {
+            final int DRAWABLE_RIGHT = 2;
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                if (event.getRawX() >= (binding.etPassword.getRight() - binding.etPassword.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
+                    togglePasswordVisibility(binding.etPassword);
+                    return true;
+                }
+            }
+            return false;
+        });
+
+        binding.etPasswordConfirm.setOnTouchListener((v, event) -> {
+            final int DRAWABLE_RIGHT = 2;
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                if (event.getRawX() >= (binding.etPasswordConfirm.getRight() - binding.etPasswordConfirm.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
+                    togglePasswordVisibility(binding.etPasswordConfirm);
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    private void togglePasswordVisibility(EditText editText) {
+        Typeface typeface = editText.getTypeface();
+        if (editText.getInputType() == (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD)) {
+            editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+            editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_visibility_on, 0);
+        } else {
+            editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+            editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_visibility_off, 0);
+        }
+        editText.setTypeface(typeface);
+        editText.setSelection(editText.getText().length());
     }
 
     private void verifyUser() {

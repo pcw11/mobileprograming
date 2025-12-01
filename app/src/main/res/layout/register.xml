@@ -116,7 +116,8 @@
                 android:hint="@string/register_password_hint"
                 android:inputType="textPassword"
                 android:paddingStart="16dp"
-                android:paddingEnd="16dp"
+                android:paddingEnd="20dp"
+                android:drawableRight="@drawable/design_ic_visibility_off"
                 android:singleLine="true" />
 
             <TextView
@@ -162,7 +163,8 @@
                 android:hint="@string/register_password_confirm_hint"
                 android:inputType="textPassword"
                 android:paddingStart="16dp"
-                android:paddingEnd="16dp"
+                android:paddingEnd="20dp"
+                android:drawableRight="@drawable/design_ic_visibility_off"
                 android:singleLine="true" />
 
             <TextView

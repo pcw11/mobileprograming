@@ -1,6 +1,5 @@
 package kr.ac.dongyang.mobileproject;
-// TODO 알림 작동 위한 기능 추가, 식물 추가 버튼 수정,디자인 refine
-// TODO 전반적인 색상 수정(날짜 색상, 글자 검은색 색상
+
 import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -941,9 +940,19 @@ public class MainActivity extends AppCompatActivity implements WeatherAdapter.We
                     SharedPreferences.Editor editor = prefs.edit();
 
                     // 물주기 알림 저장
-                    editor.putBoolean("isNotificationEnabled", switchNotification.isChecked());
-                    editor.putInt("notificationHour", timePicker.getHour());
-                    editor.putInt("notificationMinute", timePicker.getMinute());
+                    boolean isWateringNotificationEnabled = switchNotification.isChecked();
+                    int hour = timePicker.getHour();
+                    int minute = timePicker.getMinute();
+
+                    editor.putBoolean("isNotificationEnabled", isWateringNotificationEnabled);
+                    editor.putInt("notificationHour", hour);
+                    editor.putInt("notificationMinute", minute);
+
+                    if (isWateringNotificationEnabled) {
+                        scheduleWateringAlarm(hour, minute);
+                    } else {
+                        cancelWateringAlarm();
+                    }
 
                     // 날씨 알림 저장
                     editor.putBoolean("isWeatherNotificationEnabled", switchWeatherNotification.isChecked());
@@ -964,6 +973,41 @@ public class MainActivity extends AppCompatActivity implements WeatherAdapter.We
 
         builder.create().show();
     }
+
+    private void scheduleWateringAlarm(int hour, int minute) {
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(this, AlarmReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis());
+        calendar.set(Calendar.HOUR_OF_DAY, hour);
+        calendar.set(Calendar.MINUTE, minute);
+        calendar.set(Calendar.SECOND, 0);
+
+        // 만약 설정한 시간이 이미 지났다면, 다음 날로 설정
+        if (calendar.getTimeInMillis() <= System.currentTimeMillis()) {
+            calendar.add(Calendar.DAY_OF_YEAR, 1);
+        }
+
+        alarmManager.setInexactRepeating(
+                AlarmManager.RTC_WAKEUP,
+                calendar.getTimeInMillis(),
+                AlarmManager.INTERVAL_DAY,
+                pendingIntent
+        );
+
+        Toast.makeText(this, "알림이 " + hour + "시 " + minute + "분에 설정되었습니다.", Toast.LENGTH_SHORT).show();
+    }
+
+    private void cancelWateringAlarm() {
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(this, AlarmReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+        alarmManager.cancel(pendingIntent);
+        Toast.makeText(this, "알림이 해제되었습니다.", Toast.LENGTH_SHORT).show();
+    }
+
 
     private void requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

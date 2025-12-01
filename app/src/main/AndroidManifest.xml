@@ -39,7 +39,7 @@
         </provider>
 
         <receiver
-            android:name=".NotificationReceiver"
+            android:name=".AlarmReceiver"
             android:enabled="true"
             android:exported="false" />
 

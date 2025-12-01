@@ -19,20 +19,15 @@ public class BootReceiver extends BroadcastReceiver {
             if (isNotificationEnabled) {
                 int hour = prefs.getInt("notificationHour", 9);
                 int minute = prefs.getInt("notificationMinute", 0);
-                String userId = prefs.getString("USER_ID", null);
 
-                if (userId != null) {
-                    scheduleNotification(context, hour, minute, userId);
-                }
+                scheduleNotification(context, hour, minute);
             }
         }
     }
 
-    private void scheduleNotification(Context context, int hour, int minute, String userId) {
+    private void scheduleNotification(Context context, int hour, int minute) {
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        Intent intent = new Intent(context, NotificationReceiver.class);
-        intent.putExtra("USER_ID", userId);
-
+        Intent intent = new Intent(context, AlarmReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 
         Calendar calendar = Calendar.getInstance();
@@ -46,7 +41,7 @@ public class BootReceiver extends BroadcastReceiver {
         }
 
         if (alarmManager != null) {
-            alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(),
+            alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(),
                     AlarmManager.INTERVAL_DAY, pendingIntent);
         }
     }

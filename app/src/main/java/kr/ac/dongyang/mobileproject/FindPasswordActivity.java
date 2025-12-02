@@ -1,6 +1,7 @@
 package kr.ac.dongyang.mobileproject;
 
 import android.annotation.SuppressLint;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
@@ -13,6 +14,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -24,6 +26,8 @@ public class FindPasswordActivity extends AppCompatActivity {
 
     private FindpwBinding binding;
     private boolean isVerified = false;
+    private boolean isPasswordValid = false;
+    private boolean isPasswordConfirmed = false;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -32,10 +36,13 @@ public class FindPasswordActivity extends AppCompatActivity {
         binding = FindpwBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        // 초기에는 비밀번호 필드와 변경 버튼을 비활성화
+        // Set initial password visibility icon
+        binding.etPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_visibility_off, 0);
+        binding.etPasswordConfirm.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_visibility_off, 0);
+
+        // 초기에는 비밀번호 필드 비활성화
         binding.etPassword.setEnabled(false);
         binding.etPasswordConfirm.setEnabled(false);
-        binding.btnRegister.setEnabled(false);
 
         // 인증 버튼 클릭 리스너
         binding.btnVerifyEmail.setOnClickListener(v -> verifyUser());
@@ -45,6 +52,9 @@ public class FindPasswordActivity extends AppCompatActivity {
 
         // 비밀번호 유효성 검사
         addTextWatchers();
+
+        // Initial button state
+        updateChangePasswordButtonState();
 
         binding.etPassword.setOnTouchListener((v, event) -> {
             final int DRAWABLE_RIGHT = 2;
@@ -120,7 +130,7 @@ public class FindPasswordActivity extends AppCompatActivity {
                     binding.btnVerifyEmail.setEnabled(false);
                     binding.etPassword.setEnabled(true);
                     binding.etPasswordConfirm.setEnabled(true);
-                    binding.btnRegister.setEnabled(true);
+                    updateChangePasswordButtonState();
                 } else {
                     Toast.makeText(this, "일치하는 사용자 정보가 없습니다.", Toast.LENGTH_SHORT).show();
                 }
@@ -153,12 +163,13 @@ public class FindPasswordActivity extends AppCompatActivity {
         }
 
         String id = binding.etId.getText().toString().trim();
+        String hashedPassword = PasswordHasher.hashPassword(password);
 
         new Thread(() -> {
             try (Connection conn = new DatabaseConnector(this).getConnection()) {
                 String sql = "UPDATE users SET password = ? WHERE user_id = ?";
                 try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                    pstmt.setString(1, password);
+                    pstmt.setString(1, hashedPassword);
                     pstmt.setString(2, id);
                     int updatedRows = pstmt.executeUpdate();
 
@@ -199,22 +210,36 @@ public class FindPasswordActivity extends AppCompatActivity {
         return hasDigit && hasSpecialChar;
     }
 
+    private void updateChangePasswordButtonState() {
+        boolean allConditionsMet = isVerified && isPasswordValid && isPasswordConfirmed;
+        binding.btnRegister.setEnabled(allConditionsMet);
+        if (allConditionsMet) {
+            binding.btnRegister.setBackgroundColor(Color.parseColor("#4CFF7F"));
+            binding.btnRegister.setTextColor(ContextCompat.getColor(this, R.color.black));
+        } else {
+            binding.btnRegister.setBackgroundResource(R.drawable.round_edge_gray);
+            binding.btnRegister.setTextColor(ContextCompat.getColor(this, R.color.register_button_text_disabled));
+        }
+    }
+
     private void addTextWatchers() {
         binding.etPassword.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (isValidPassword(s.toString())) {
-                    binding.tvPwStatus.setText("✅");
-                } else {
-                    binding.tvPwStatus.setText("❌");
-                }
-            }
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
 
             @Override
-            public void afterTextChanged(Editable s) {}
+            public void afterTextChanged(Editable s) {
+                isPasswordValid = isValidPassword(s.toString());
+                binding.tvPwStatus.setText(isPasswordValid ? "✅" : "❌");
+
+                isPasswordConfirmed = !binding.etPasswordConfirm.getText().toString().isEmpty() && binding.etPasswordConfirm.getText().toString().equals(s.toString());
+                binding.tvPwConfirmStatus.setText(isPasswordConfirmed ? "✅" : "❌");
+
+                updateChangePasswordButtonState();
+            }
         });
 
         binding.etPasswordConfirm.addTextChangedListener(new TextWatcher() {
@@ -222,16 +247,15 @@ public class FindPasswordActivity extends AppCompatActivity {
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (s.toString().equals(binding.etPassword.getText().toString())) {
-                    binding.tvPwConfirmStatus.setText("✅");
-                } else {
-                    binding.tvPwConfirmStatus.setText("❌");
-                }
-            }
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
 
             @Override
-            public void afterTextChanged(Editable s) {}
+            public void afterTextChanged(Editable s) {
+                isPasswordConfirmed = !s.toString().isEmpty() && s.toString().equals(binding.etPassword.getText().toString());
+                binding.tvPwConfirmStatus.setText(isPasswordConfirmed ? "✅" : "❌");
+
+                updateChangePasswordButtonState();
+            }
         });
     }
 }

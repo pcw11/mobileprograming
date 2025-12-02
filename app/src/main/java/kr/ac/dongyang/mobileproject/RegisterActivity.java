@@ -45,6 +45,10 @@ public class RegisterActivity extends AppCompatActivity {
         binding = RegisterBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        // Set initial password visibility icon
+        binding.etPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_visibility_off, 0);
+        binding.etPasswordConfirm.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_visibility_off, 0);
+
         setupListeners();
         updateRegisterButtonState();
     }
@@ -63,10 +67,6 @@ public class RegisterActivity extends AppCompatActivity {
 
         // 가입하기 버튼 클릭 리스너
         binding.btnRegister.setOnClickListener(v -> {
-            if (!isIdChecked || !isPasswordValid || !isPasswordConfirmed || !isEmailValid || !binding.cbAgreeTerms.isChecked() || !binding.cbAgreePrivacy.isChecked()) {
-                Toast.makeText(this, "입력 정보를 다시 확인해주세요.", Toast.LENGTH_SHORT).show();
-                return;
-            }
             registerUser(
                     binding.etId.getText().toString().trim(),
                     binding.etPassword.getText().toString().trim(),
@@ -219,6 +219,7 @@ public class RegisterActivity extends AppCompatActivity {
 
     private void updateRegisterButtonState() {
         boolean allConditionsMet = isIdChecked && isPasswordValid && isPasswordConfirmed && isEmailValid && binding.cbAgreeTerms.isChecked() && binding.cbAgreePrivacy.isChecked();
+        binding.btnRegister.setEnabled(allConditionsMet);
         if (allConditionsMet) {
             binding.btnRegister.setBackgroundColor(Color.parseColor("#4CFF7F"));
             binding.btnRegister.setTextColor(ContextCompat.getColor(this, R.color.black));
@@ -306,10 +307,10 @@ public class RegisterActivity extends AppCompatActivity {
             boolean finalSuccess = success;
             handler.post(() -> {
                 if (finalSuccess) {
-                    Toast.makeText(this, "회원가입 성공!", Toast.LENGTH_SHORT).show();
-                    finish(); // 회원가입 성공 시 로그인 화면으로 돌아감
+                    Toast.makeText(this, "회원가입에 성공했습니다!", Toast.LENGTH_SHORT).show();
+                    finish();
                 } else {
-                    Toast.makeText(this, "회원가입에 실패했습니다. 다시 시도해주세요.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "회원가입에 실패했습니다.", Toast.LENGTH_SHORT).show();
                 }
             });
         });

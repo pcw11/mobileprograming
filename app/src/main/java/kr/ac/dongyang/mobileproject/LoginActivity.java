@@ -109,15 +109,20 @@ public class LoginActivity extends AppCompatActivity {
 
         if (isAutoLoginEnabled) {
             String savedId = sharedPreferences.getString("USER_ID", null);
-            String savedPw = sharedPreferences.getString("password", null);
-            if (savedId != null && savedPw != null) {
+            String savedPwHash = sharedPreferences.getString("password_hash", null);
+            if (savedId != null && savedPwHash != null) {
                 Toast.makeText(this, "자동 로그인 중입니다...", Toast.LENGTH_SHORT).show();
-                login(savedId, savedPw);
+                loginWithHash(savedId, savedPwHash);
             }
         }
     }
 
     private void login(final String userId, final String password) {
+        String hashedPassword = PasswordHasher.hashPassword(password);
+        loginWithHash(userId, hashedPassword);
+    }
+
+    private void loginWithHash(final String userId, final String passwordHash) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Handler handler = new Handler(Looper.getMainLooper());
 
@@ -136,8 +141,7 @@ public class LoginActivity extends AppCompatActivity {
 
                 if (rs.next()) {
                     String dbPasswordHash = rs.getString("password");
-                    String enteredPasswordHash = PasswordHasher.hashPassword(password);
-                    if (dbPasswordHash.equals(enteredPasswordHash)) {
+                    if (dbPasswordHash.equals(passwordHash)) {
                         resultMessage = "SUCCESS";
                     } else {
                         resultMessage = "아이디 또는 비밀번호가 일치하지 않습니다.";
@@ -168,7 +172,7 @@ public class LoginActivity extends AppCompatActivity {
                 if ("SUCCESS".equals(finalResultMessage)) {
                     if (binding.cbAutoLogin.isChecked()) {
                         editor.putString("USER_ID", userId);
-                        editor.putString("password", password); // 비밀번호 저장
+                        editor.putString("password_hash", passwordHash); // 해시된 비밀번호 저장
                         editor.putBoolean("isAutoLogin", true);
                     } else {
                         editor.clear();
@@ -181,7 +185,6 @@ public class LoginActivity extends AppCompatActivity {
                     startActivity(intent);
                     finish();
                 } else {
-                    // 자동 로그인 실패 시에도 저장된 정보는 유지하지 않음
                     if (!binding.cbAutoLogin.isChecked()) {
                         editor.clear();
                         editor.apply();

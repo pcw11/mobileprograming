@@ -3,6 +3,7 @@ package kr.ac.dongyang.mobileproject;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
@@ -39,6 +40,10 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         sharedPreferences = getSharedPreferences("AutoLoginPrefs", MODE_PRIVATE);
+
+        // Underline TextViews
+        binding.tvRegister.setPaintFlags(binding.tvRegister.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+        binding.tvFindPassword.setPaintFlags(binding.tvFindPassword.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
 
         binding.tvFindPassword.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, FindPasswordActivity.class);

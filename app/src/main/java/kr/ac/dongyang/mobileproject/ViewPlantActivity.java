@@ -15,8 +15,10 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -179,6 +181,19 @@ public class ViewPlantActivity extends AppCompatActivity {
             }
         });
         ivPhotoAdd.setOnClickListener(v -> showImageSourceDialog());
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        View focusView = getCurrentFocus();
+        if (focusView != null) {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.hideSoftInputFromWindow(focusView.getWindowToken(), 0);
+            }
+            focusView.clearFocus();
+        }
+        return super.dispatchTouchEvent(ev);
     }
 
     @Override

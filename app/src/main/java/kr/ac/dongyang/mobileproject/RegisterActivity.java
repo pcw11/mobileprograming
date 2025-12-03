@@ -1,6 +1,7 @@
 package kr.ac.dongyang.mobileproject;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -152,7 +153,8 @@ public class RegisterActivity extends AppCompatActivity {
         });
 
         // 약관 동의 체크박스 리스너
-        binding.cbAgreeAll.setOnCheckedChangeListener((buttonView, isChecked) -> {
+        binding.cbAgreeAll.setOnClickListener(v -> {
+            boolean isChecked = binding.cbAgreeAll.isChecked();
             isCheckingAll = true;
             binding.cbAgreeTerms.setChecked(isChecked);
             binding.cbAgreePrivacy.setChecked(isChecked);
@@ -175,6 +177,32 @@ public class RegisterActivity extends AppCompatActivity {
         binding.cbAgreeTerms.setOnCheckedChangeListener(individualCheckboxListener);
         binding.cbAgreePrivacy.setOnCheckedChangeListener(individualCheckboxListener);
         binding.cbAgreeAds.setOnCheckedChangeListener(individualCheckboxListener);
+
+        binding.tvViewTerms.setOnClickListener(v -> {
+            showTermsDialog();
+        });
+
+        binding.tvViewPrivacy.setOnClickListener(v -> {
+            showPrivacyDialog();
+        });
+    }
+
+    private void showTermsDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("이용약관")
+                .setMessage("이용약관 내용입니다. 서비스 이용에 감사드립니다.")
+                .setPositiveButton("닫기", (dialog, which) -> dialog.dismiss());
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    private void showPrivacyDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("개인정보 처리방침")
+                .setMessage("개인정보 처리방침 내용입니다. 귀하의 개인정보는 안전하게 보호됩니다.")
+                .setPositiveButton("닫기", (dialog, which) -> dialog.dismiss());
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     private void togglePasswordVisibility(EditText editText) {

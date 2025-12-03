@@ -25,6 +25,7 @@
             android:textSize="14sp"
             android:importantForAutofill="no"
             android:inputType="textMultiLine"
+            android:maxLines="10"
             android:hint="메모를 입력하세요."
             tools:text="메모 내용입니다. 여기에 메모가 표시됩니다." />
 

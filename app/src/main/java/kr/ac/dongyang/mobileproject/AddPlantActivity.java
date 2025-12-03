@@ -1,5 +1,6 @@
 package kr.ac.dongyang.mobileproject;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -14,8 +15,10 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -172,6 +175,20 @@ public class AddPlantActivity extends AppCompatActivity {
         // 초기 물 주기 텍스트 설정
         tvWaterSubtitle.setText("물 주기는 " + wateringCycle + "일 입니다.");
     }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        View focusView = getCurrentFocus();
+        if (focusView != null) {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.hideSoftInputFromWindow(focusView.getWindowToken(), 0);
+            }
+            focusView.clearFocus();
+        }
+        return super.dispatchTouchEvent(ev);
+    }
+
 
     private void logout() {
         SharedPreferences sharedPreferences = getSharedPreferences("AutoLoginPrefs", MODE_PRIVATE);

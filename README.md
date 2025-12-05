@@ -39,22 +39,12 @@
 | ------------ | ------------------------------ |
 | **Language** | Java, XML                      |
 | **Platform** | Android 9.0                    |
-| **DB**       | SQLite / Firebase              |
-| **Server**   | JAX-RS API                     |
+| **DB**       | MySQL 8.0                      |
+| **Server**   | Flask                          |
 | **Tools**    | Android Studio, GitHub, Notion |
 
 ## 🌲 프로젝트 구조 (Project Structure)
-📦 dongsoop
-┣ 📁 app
-┣ 📁 src
-┣ 📁 assets
-┃   ┗ 📁 images
-┃        ┣ splash.png
-┃        ┣ main.png
-┃        ┗ dashboard.png
-┣ 📁 docs
-┃   ┗ flowchart.png
-┗ README.md
+
 
 ## 🌼 개발 일정 (Timeline)
 | 기간      | 내용          |
